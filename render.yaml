@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: mini-stack-overflow-server
+    env: docker
+    plan: starter
+    dockerfilePath: server/Dockerfile
+    branch: main
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: null
+  - type: job
+    name: mini-stack-overflow-prisma-migrate
+    plan: starter
+    env: docker
+    dockerfilePath: server/Dockerfile
+    startCommand: /usr/local/bin/start.sh
+    branch: main
+  - type: static
+    name: mini-stack-overflow-client
+    env: static
+    plan: starter
+    buildCommand: cd client && npm install && npm run build
+    staticPublishPath: client/dist
+    branch: main
