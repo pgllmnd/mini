@@ -1,0 +1,13 @@
+{
+  "name": "mini-stack-overflow",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd server && npm ci && npm run build && cd ../client && npm ci && npm run build",
+    "start": "cd server && npm ci --only=production && npm run start:migrate",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
