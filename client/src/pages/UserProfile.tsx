@@ -126,8 +126,7 @@ export default function UserProfile() {
           avatar_url: data.avatar_url
         }));
       }
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: unknown } };
+    } catch {
       setError('Failed to load user profile');
     } finally {
       setLoading(false);
