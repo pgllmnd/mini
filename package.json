@@ -1,13 +1,22 @@
 {
   "name": "mini-stack-overflow",
   "version": "1.0.0",
+  "description": "Mini Stack Overflow clone",
   "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "build": "cd server && npm ci && npm run build && cd ../client && npm ci && npm run build",
-    "start": "cd server && npm ci --only=production && npm run start:migrate",
-    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\""
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "cd server && npm run start"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.0"
+  "dependencies": {
+    "concurrently": "^8.2.1"
   }
 }

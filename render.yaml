@@ -1,24 +1,26 @@
 services:
+  # Service pour le backend
   - type: web
-    name: mini-stack-overflow-server
-    env: docker
-    plan: starter
-    dockerfilePath: server/Dockerfile
-    branch: main
+    name: mini-stack-backend
+    env: node
+    buildCommand: cd server && npm run build
+    startCommand: cd server && npm run deploy
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
-        fromDatabase: null
-  - type: job
-    name: mini-stack-overflow-prisma-migrate
-    plan: starter
-    env: docker
-    dockerfilePath: server/Dockerfile
-    startCommand: /usr/local/bin/start.sh
-    branch: main
-  - type: static
-    name: mini-stack-overflow-client
-    env: static
-    plan: starter
+        sync: false # Vous devrez configurer cette variable dans le dashboard Render
+      - key: JWT_SECRET
+        sync: false # Vous devrez configurer cette variable dans le dashboard Render
+    autoDeploy: true
+
+  # Service pour le frontend
+  - type: web
+    name: mini-stack-frontend
+    env: node
     buildCommand: cd client && npm install && npm run build
-    staticPublishPath: client/dist
-    branch: main
+    startCommand: cd client && npm run preview
+    envVars:
+      - key: VITE_API_URL
+        value: https://mini-stack-backend.onrender.com # Remplacez par l'URL de votre backend
+    autoDeploy: true
