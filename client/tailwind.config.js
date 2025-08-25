@@ -13,16 +13,16 @@ export default {
     },
     extend: {
       backgroundImage: {
-        'soft-gradient': 'linear-gradient(90deg,var(--primary), rgba(59,130,246,0.6))',
+        'soft-gradient': 'linear-gradient(90deg,var(--primary), rgba(249,115,22,0.6))',
       },
       colors: {
         primary: {
-          light: '#3b82f6',
-          dark: '#60a5fa',
+          light: '#F97316',
+          dark: '#F97316',
         },
         tag: {
-          light: '#eab308',
-          dark: '#facc15',
+          light: '#FACC15',
+          dark: '#FACC15',
         },
         background: {
           light: '#ffffff',

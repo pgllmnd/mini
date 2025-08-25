@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
 
 interface CommentProps {
@@ -25,7 +25,7 @@ export function CommentSection({ answerId, questionId, onCommentAdded }: Comment
   const loadComments = async () => {
     try {
       setIsLoading(true);
-      const { data } = await axios.get(`http://localhost:5000/api/questions/${questionId}/answers/${answerId}/comments`);
+  const { data } = await api.get(`/api/questions/${questionId}/answers/${answerId}/comments`);
       setComments(Array.isArray(data) ? data : []);
       setShowComments(true);
     } catch (error) {
@@ -42,7 +42,7 @@ export function CommentSection({ answerId, questionId, onCommentAdded }: Comment
 
     try {
       setIsLoading(true);
-      await axios.post(`http://localhost:5000/api/questions/${questionId}/answers/${answerId}/comments`, {
+  await api.post(`/api/questions/${questionId}/answers/${answerId}/comments`, {
         content: newComment,
       });
       setNewComment('');

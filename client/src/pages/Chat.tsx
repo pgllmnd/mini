@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 
 export default function Chat() {
   const [messages, setMessages] = useState<{ role: 'user'|'bot'; text: string }[]>([]);
@@ -16,7 +16,7 @@ export default function Chat() {
 
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.post('http://localhost:5000/api/chat', { message: text }, {
+      const { data } = await api.post('/api/chat', { message: text }, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
 

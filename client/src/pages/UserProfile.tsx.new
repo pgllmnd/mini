@@ -117,6 +117,19 @@ export default function UserProfile() {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
       
+      console.log('User data received:', {
+        ...data,
+        bio_details: {
+          value: data.bio,
+          type: typeof data.bio,
+          length: data.bio?.length,
+          isEmpty: data.bio === '',
+          isNull: data.bio === null,
+          isUndefined: data.bio === undefined,
+          stringified: JSON.stringify(data.bio)
+        }
+      });
+
       setUserData(data);
       
       if (isOwnProfile && data) {
@@ -218,6 +231,16 @@ export default function UserProfile() {
               <div className="mt-3 bg-surface-light dark:bg-surface-dark p-4 rounded">
                 <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">À propos</h3>
                 <p className="text-[var(--text-secondary)] text-sm">
+                  {/* Debug Info */}
+                  <span className="block text-xs text-gray-500 mb-2">
+                    [Debug] Bio Info:
+                    <br />- Value: {JSON.stringify(userData.bio)}
+                    <br />- Type: {typeof userData.bio}
+                    <br />- Length: {(userData.bio || '').length}
+                    <br />- Is Empty: {String(userData.bio === '')}
+                    <br />- Is Null: {String(userData.bio === null)}
+                    <br />- Is Undefined: {String(userData.bio === undefined)}
+                  </span>
                   {bioContent}
                 </p>
               </div>

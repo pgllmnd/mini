@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 
 function AskQuestion() {
@@ -28,7 +28,7 @@ function AskQuestion() {
         return;
       }
 
-      const { data } = await axios.post('http://localhost:5000/api/questions', {
+  const { data } = await api.post('/api/questions', {
         title,
         content,
         tags: formattedTags,
@@ -52,7 +52,7 @@ function AskQuestion() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+  <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-gray-700 mb-2">
             Title
@@ -82,20 +82,21 @@ function AskQuestion() {
             </button>
           </div>
 
-          {preview ? (
-            <div className="p-4 border rounded prose max-w-none min-h-[200px]">
+          <div className="md-editor">
+            <div className="editor">
+              <textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="w-full p-2 border rounded h-64"
+                placeholder="Describe your question in detail. You can use Markdown for formatting."
+                required
+              />
+            </div>
+            <div className="preview">
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
-          ) : (
-            <textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full p-2 border rounded h-64"
-              placeholder="Describe your question in detail. You can use Markdown for formatting."
-              required
-            />
-          )}
+          </div>
           <p className="mt-1 text-sm text-gray-500">
             Markdown formatting is supported
           </p>

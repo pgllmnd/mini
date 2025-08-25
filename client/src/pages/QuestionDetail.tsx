@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../hooks/useAuth';
 import { CommentSection } from '../components/CommentSection';
@@ -43,7 +43,7 @@ function QuestionDetail() {
   const loadQuestion = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(`http://localhost:5000/api/questions/${id}`);
+  const { data } = await api.get(`/api/questions/${id}`);
       setQuestion(data);
     } catch (error) {
       console.error('Failed to load question:', error);
@@ -66,7 +66,7 @@ function QuestionDetail() {
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/questions/${id}/vote`, {
+  await api.post(`/api/questions/${id}/vote`, {
         voteType,
         targetType,
         targetId,
@@ -86,7 +86,7 @@ function QuestionDetail() {
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/questions/${id}/answers`, {
+  await api.post(`/api/questions/${id}/answers`, {
         content: newAnswer,
       });
       setNewAnswer('');
@@ -99,7 +99,7 @@ function QuestionDetail() {
 
   const handleAcceptAnswer = async (answerId: number) => {
     try {
-      await axios.patch(`http://localhost:5000/api/questions/${id}/answers/${answerId}/accept`);
+  await api.patch(`/api/questions/${id}/answers/${answerId}/accept`);
       loadQuestion();
     } catch (error) {
       console.error('Failed to accept answer:', error);
@@ -132,23 +132,17 @@ function QuestionDetail() {
       <div className="p-6 rounded-lg" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow, 0 6px 18px rgba(2,6,23,0.06))' }}>
         <h1 className="text-3xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{question.title}</h1>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-6">
           <div className="flex flex-col items-center">
-            <button
-              onClick={() => handleVote('up', 'question', question.id)}
-              className="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
-            >
-              ▲
+            <button className="vote-btn" onClick={() => handleVote('up', 'question', question.id)} aria-label="Upvote">
+              <span style={{fontSize: '18px'}}>↑</span>
             </button>
-            <span className="my-1 text-gray-700 dark:text-gray-300">{question.upvotes - question.downvotes}</span>
-            <button
-              onClick={() => handleVote('down', 'question', question.id)}
-              className="text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
-            >
-              ▼
+            <span className="vote-count">{question.upvotes - question.downvotes}</span>
+            <button className="vote-btn" onClick={() => handleVote('down', 'question', question.id)} aria-label="Downvote">
+              <span style={{fontSize: '18px'}}>↓</span>
             </button>
           </div>
-            <div className="prose max-w-none flex-1" style={{ color: 'var(--text-primary)' }}>
+          <div className="prose max-w-none flex-1" style={{ color: 'var(--text-primary)' }}>
             <ReactMarkdown>{question.content}</ReactMarkdown>
           </div>
         </div>
@@ -195,8 +189,13 @@ function QuestionDetail() {
                     </button>
                   )}
                 </div>
-                <div className="prose max-w-none flex-1">
-                  <ReactMarkdown>{answer.content}</ReactMarkdown>
+                <div className="prose max-w-none flex-1 md-editor">
+                  <div className="editor">
+                    <ReactMarkdown>{answer.content}</ReactMarkdown>
+                  </div>
+                  <div className="preview">
+                    <ReactMarkdown>{answer.content}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
 

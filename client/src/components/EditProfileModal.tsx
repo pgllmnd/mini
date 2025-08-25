@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 
 interface EditProfileModalProps {
   user: {
@@ -32,18 +32,36 @@ export function EditProfileModal({ user, onClose, onUpdate }: EditProfileModalPr
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append('bio', bio);
-    if (fileInputRef.current?.files?.[0]) {
-      formData.append('avatar', fileInputRef.current.files[0]);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      setLoading(false);
+      return;
     }
 
     try {
-      await axios.patch('/api/users/profile', formData, {
+      // 1. If there's a file, upload it first via /avatar endpoint (has multer)
+      if (fileInputRef.current?.files?.[0]) {
+        const formData = new FormData();
+        formData.append('avatar', fileInputRef.current.files[0]);
+        
+        await api.post('/api/users/avatar', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+
+      // 2. Update profile with bio
+      await api.patch('/api/users/profile', { bio }, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
       });
+
+      // Success
       onUpdate();
       onClose();
     } catch (error) {

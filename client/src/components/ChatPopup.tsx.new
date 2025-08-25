@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 
 interface ChatPopupProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ export default function ChatPopup({ isOpen, onClose }: ChatPopupProps) {
 
     try {
       const token = localStorage.getItem('token');
-      const { data } = await axios.post('http://localhost:5000/api/chat', { message: text }, {
+      const { data } = await api.post('/api/chat', { message: text }, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       });
 

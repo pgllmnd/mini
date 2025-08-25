@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import { useAuth } from '../hooks/useAuth';
 import SearchBar from '../components/SearchBar';
 
@@ -27,7 +27,7 @@ function Home() {
   const loadQuestions = useCallback(async (query?: string, tags?: string[]) => {
     try {
       setLoading(true);
-      const { data } = await axios.get('http://localhost:5000/api/questions', {
+  const { data } = await api.get('/api/questions', {
         params: {
           q: query,
           tags: tags?.join(','),
@@ -144,7 +144,7 @@ function Home() {
                   <Link
                     key={tag}
                     to={`/questions?tag=${tag}`}
-                    className="px-2 py-1 bg-[rgba(59,130,246,0.08)] text-[var(--primary)] rounded-full text-sm hover:bg-[rgba(59,130,246,0.12)] dark:hover:bg-[rgba(96,165,250,0.08)]"
+                    className={`tag-badge small ${tag.length > 8 ? 'gray' : 'blue'}`}
                   >
                     {tag}
                   </Link>

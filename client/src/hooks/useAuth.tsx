@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { useNavigate } from 'react-router-dom';
 
 interface User {
   id: number;
   email: string;
   username: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -26,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token');
     if (token) {
       // Configure axios avec le token
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       // Récupérer les infos utilisateur
       void fetchUserInfo();
     }
@@ -37,7 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const { data } = await axios.get('http://localhost:5000/api/auth/me');
+  const { data } = await api.get('/api/auth/me');
       setUser(data);
     } catch {
       logout();
@@ -46,13 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+  const { data } = await api.post('/api/auth/login', {
         email,
         password,
       });
 
       localStorage.setItem('token', data.token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+  api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       setUser(data.user);
     } catch {
       throw new Error('Invalid credentials');
@@ -61,14 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, username: string) => {
     try {
-      const { data } = await axios.post('http://localhost:5000/api/auth/register', {
+  const { data } = await api.post('/api/auth/register', {
         email,
         password,
         username,
       });
 
       localStorage.setItem('token', data.token);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+  api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       setUser(data.user);
     } catch {
       throw new Error('Registration failed');
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('token');
-    delete axios.defaults.headers.common['Authorization'];
+  delete api.defaults.headers.common['Authorization'];
     setUser(null);
     navigate('/');
   };

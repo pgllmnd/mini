@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Link } from 'react-router-dom';
 
 interface User {
@@ -18,7 +18,7 @@ function Users() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/users');
+  const { data } = await api.get('/api/users');
         setUsers(data);
       } catch (err) {
         console.error('Failed to fetch users:', err);

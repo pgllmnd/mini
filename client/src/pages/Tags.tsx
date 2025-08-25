@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Link } from 'react-router-dom';
 
 interface Tag {
@@ -17,7 +17,7 @@ function Tags() {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const { data } = await axios.get('http://localhost:5000/api/tags');
+  const { data } = await api.get('/api/tags');
         setTags(data);
       } catch (err) {
         console.error('Failed to fetch tags:', err);
@@ -60,7 +60,6 @@ function Tags() {
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className="material-symbols-rounded" style={{ color: 'var(--primary)' }}>sell</span>
           <h1 className="text-2xl font-medium" style={{ color: 'var(--text-primary)' }}>Tags</h1>
         </div>
         <p style={{ color: 'var(--text-secondary)' }} className="text-sm">
@@ -80,13 +79,9 @@ function Tags() {
           >
             <Link
               to={`/questions?tag=${tag.name}`}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded"
-              style={{ 
-                backgroundColor: 'var(--primary-soft)',
-                color: 'var(--primary)'
-              }}
+              className="tag-badge small"
+              aria-label={`View questions tagged ${tag.name}`}
             >
-              <span className="material-symbols-rounded text-sm">sell</span>
               {tag.name}
             </Link>
             <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
