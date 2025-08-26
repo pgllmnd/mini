@@ -50,7 +50,8 @@ export const register = async (req: Request, res: Response) => {
       select: {
         id: true,
         email: true,
-        username: true
+        username: true,
+        avatar_url: true
       }
     });
 
@@ -66,7 +67,8 @@ export const register = async (req: Request, res: Response) => {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        avatar_url: user.avatar_url
       }
     });
   } catch (error) {
@@ -91,7 +93,8 @@ export const login = async (req: Request, res: Response) => {
         id: true,
         email: true,
         username: true,
-        password: true
+        password: true,
+        avatar_url: true
       }
     });
 

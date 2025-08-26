@@ -24,9 +24,6 @@ app.use('/api/users', userRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/chat', chatRoutes);
 
-// Lightweight healthcheck
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
-
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

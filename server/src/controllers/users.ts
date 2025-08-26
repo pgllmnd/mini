@@ -156,18 +156,31 @@ export const getProfile = async (req: Request, res: Response) => {
     console.log('Looking up user with id:', id);
     
     let user;
+    // Prepare lookup key outside try so fallback code can reuse it if needed
+    let lookup: Record<string, string> | null = null;
     try {
-      user = await prisma.user.findFirst({
-        where: {
-          OR: [
-            { id },
-            { username: id }
-          ]
-        },
+      // If the identifier looks like an email, prefer lookup by unique email.
+      // Otherwise try id (UUID) or username. Using findUnique for unique fields
+      // avoids ambiguous queries and is safer with strict schemas.
+      if (id.includes('@')) {
+        lookup = { email: id };
+      } else if (isUuidV4(id)) {
+        lookup = { id };
+      } else {
+        // username is unique in the Prisma schema
+        lookup = { username: id };
+      }
+
+      // Log the lookup parameters
+      console.log('Looking up user with:', lookup);
+
+      user = await prisma.user.findUnique({
+        where: lookup as any,
         select: {
           id: true,
           username: true,
           email: true,
+          bio: true,
           createdAt: true,
           reputation: true,
           avatar_url: true,
@@ -195,9 +208,47 @@ export const getProfile = async (req: Request, res: Response) => {
           },
         },
       });
-    } catch (pErr) {
+    } catch (pErr: any) {
       console.error('Prisma error in getProfile:', pErr);
-      return res.status(500).json({ message: 'Database error', details: (pErr as Error).message });
+      // Prisma P2022 = column does not exist in DB for this model
+      if (pErr?.code === 'P2022') {
+        // Try a minimal fallback query that only selects commonly-present columns
+        try {
+          console.warn('Attempting minimal fallback query after P2022');
+          const minimal = await prisma.user.findFirst({
+            where: lookup as any,
+            select: {
+              id: true,
+              username: true,
+              email: true,
+              createdAt: true,
+              reputation: true,
+              avatar_url: true,
+            },
+          });
+
+          if (!minimal) return res.status(404).json({ message: 'User not found' });
+
+          return res.json({
+            id: minimal.id,
+            username: minimal.username,
+            email: minimal.email,
+            created_at: minimal.createdAt,
+            reputation: minimal.reputation,
+            avatar_url: minimal.avatar_url,
+            // Without questions/answers/bio available in this fallback
+            questions: [],
+            answers: [],
+          });
+        } catch (fallbackErr) {
+          console.error('Fallback query failed:', fallbackErr);
+          return res.status(500).json({
+            message: 'Database schema mismatch and fallback failed. Run migrations to sync DB with prisma/schema.prisma.',
+            details: pErr.meta || null,
+          });
+        }
+      }
+      return res.status(500).json({ message: 'Database error', details: pErr?.message });
     }
 
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -227,6 +278,7 @@ export const getProfile = async (req: Request, res: Response) => {
       id: user.id,
       username: user.username,
       email: user.email,
+      bio: (user as any).bio ?? null,
       created_at: user.createdAt,
       reputation: user.reputation,
       avatar_url: user.avatar_url,
@@ -241,16 +293,29 @@ export const getProfile = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { username, avatar_url } = req.body;
+  const { username, avatar_url, bio } = req.body;
     const userId = req.user?.id;
 
     if (!userId) return res.status(401).json({ message: 'Authentication required' });
 
+    // If username change requested, ensure it's not already taken by another user
+    if (username) {
+      const existing = await prisma.user.findUnique({ where: { username } });
+      if (existing && existing.id !== userId) {
+        return res.status(409).json({ message: 'USERNAME_TAKEN' });
+      }
+    }
+
     try {
+      const dataToUpdate: any = {};
+      if (typeof username === 'string' && username.trim()) dataToUpdate.username = username.trim();
+      if (typeof avatar_url === 'string') dataToUpdate.avatar_url = avatar_url;
+      if (typeof bio === 'string') dataToUpdate.bio = bio;
+
       const updatedUser = await prisma.user.update({
         where: { id: userId },
-        data: { username, avatar_url },
-        select: { id: true, email: true, username: true, avatar_url: true },
+        data: dataToUpdate,
+        select: { id: true, email: true, username: true, avatar_url: true, bio: true },
       });
 
       return res.json(updatedUser);

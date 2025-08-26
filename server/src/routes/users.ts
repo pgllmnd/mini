@@ -13,8 +13,9 @@ router.get('/:id', userController.getProfile);
 // Upload avatar (auth -> multer -> handler)
 router.post('/avatar', auth, userController.avatarUploadMiddleware, userController.uploadAvatar as any);
 // Temporary test route (no auth) to validate upload flow during development
-router.post('/avatar/test', userController.avatarUploadMiddleware, userController.uploadAvatar as any);
-router.post('/avatar/debug', userController.avatarUploadMiddleware, userController.avatarDebug as any);
+// Test/debug routes should still require auth in non-dev environments
+router.post('/avatar/test', auth, userController.avatarUploadMiddleware, userController.uploadAvatar as any);
+router.post('/avatar/debug', auth, userController.avatarUploadMiddleware, userController.avatarDebug as any);
 
 // Temporary Prisma connectivity test
 router.get('/_test/prisma', userController.testPrisma);
