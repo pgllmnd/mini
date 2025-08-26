@@ -1,16 +1,1 @@
-# Node modules
-node_modules/
-
-# Project build outputs
-server/dist/
-client/dist/
-
-# Environment files
-.env
-.env.*
-
-# Misc
-.DS_Store
-npm-debug.log*
-.vscode/
-.idea/
+server/.env 
