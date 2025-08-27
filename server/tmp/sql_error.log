@@ -1266,3 +1266,187 @@ QUERY:
      GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
 VALUES:[]
 
+--- getQuestions request at 2025-08-27T20:19:21.436Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:19:21.441Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:19:23.145Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:19:23.148Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:26:24.710Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:26:24.716Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:26:27.818Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:26:27.820Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:26:38.488Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:26:38.490Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:26:38.732Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:26:38.735Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:41:00.446Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:41:00.449Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+
+--- getQuestions request at 2025-08-27T20:41:02.006Z ---
+SORT: newest
+RAW_SEARCH: 
+
+--- getQuestions SQL at 2025-08-27T20:41:02.009Z ---
+QUERY:
+
+      SELECT 
+        q.*,
+        u.username as author_username,
+        COUNT(DISTINCT a.id) as answer_count,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'UP') as upvotes,
+        COUNT(DISTINCT v.id) FILTER (WHERE v.type = 'DOWN') as downvotes,
+        array_agg(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL) as tags
+      FROM "public"."questions" q
+      LEFT JOIN "public"."users" u ON q.author_id = u.id
+      LEFT JOIN "public"."answers" a ON q.id = a.question_id
+      LEFT JOIN "public"."votes" v ON q.id = v.question_id
+      LEFT JOIN "public"."_QuestionToTag" qt ON q.id = qt."A"
+      LEFT JOIN "public"."tags" t ON qt."B" = t.id
+     GROUP BY q.id, q.title, q.content, q.created_at, q.updated_at, q.author_id, q.views, u.username ORDER BY q.created_at DESC
+VALUES:[]
+

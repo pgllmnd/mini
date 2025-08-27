@@ -191,7 +191,7 @@ export const getProfile = async (req: Request, res: Response) => {
               content: true,
               createdAt: true,
               answers: { select: { id: true } },
-              votes: { select: { type: true } },
+              votes: { select: { id: true, type: true, createdAt: true, user: { select: { id: true, username: true } } } },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -202,7 +202,17 @@ export const getProfile = async (req: Request, res: Response) => {
               createdAt: true,
               isAccepted: true,
               question: { select: { id: true, title: true } },
-              votes: { select: { type: true } },
+              votes: { select: { id: true, type: true, createdAt: true, user: { select: { id: true, username: true } } } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          comments: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              question: { select: { id: true, title: true } },
+              answer: { select: { id: true, question: { select: { id: true, title: true } } } },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -348,7 +358,7 @@ export const getUserActivity = async (req: Request, res: Response) => {
               content: true,
               createdAt: true,
               answers: { select: { id: true } },
-              votes: { select: { type: true } },
+              votes: { select: { id: true, type: true, createdAt: true, user: { select: { id: true, username: true } } } },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -359,7 +369,29 @@ export const getUserActivity = async (req: Request, res: Response) => {
               createdAt: true,
               isAccepted: true,
               question: { select: { id: true, title: true } },
-              votes: { select: { type: true } },
+              votes: { select: { id: true, type: true, createdAt: true, user: { select: { id: true, username: true } } } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          comments: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              question: { select: { id: true, title: true } },
+              answer: { select: { id: true, question: { select: { id: true, title: true } } } },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
+          votes: {
+            select: {
+              id: true,
+              type: true,
+              questionId: true,
+              answerId: true,
+              createdAt: true,
+              question: { select: { id: true, title: true } },
+              answer: { select: { id: true, question: { select: { id: true, title: true } } } },
             },
             orderBy: { createdAt: 'desc' },
           },
@@ -372,28 +404,85 @@ export const getUserActivity = async (req: Request, res: Response) => {
 
     if (!userActivity) return res.status(404).json({ message: 'User not found' });
 
-    const formattedQuestions = (userActivity.questions || []).map((q: QuestionRel) => ({
+    const formattedQuestions = (userActivity.questions || []).map((q: any) => ({
       id: q.id,
       title: q.title,
       content: q.content ?? '',
       created_at: q.createdAt,
       answer_count: q.answers?.length ?? 0,
-      upvotes: q.votes?.filter((v) => v.type === 'UP').length ?? 0,
-      downvotes: q.votes?.filter((v) => v.type === 'DOWN').length ?? 0,
+      upvotes: q.votes?.filter((v: any) => v.type === 'UP').length ?? 0,
+      downvotes: q.votes?.filter((v: any) => v.type === 'DOWN').length ?? 0,
+      votes_detail: q.votes?.map((vt: any) => ({ id: vt.id, type: vt.type, created_at: vt.createdAt, by: vt.user })) ?? [],
     }));
 
-    const formattedAnswers = (userActivity.answers || []).map((a: AnswerRel) => ({
+    const formattedAnswers = (userActivity.answers || []).map((a: any) => ({
       id: a.id,
       content: a.content ?? '',
       question_id: a.question.id,
       question_title: a.question.title,
       created_at: a.createdAt,
       is_accepted: a.isAccepted,
-      upvotes: a.votes?.filter((v) => v.type === 'UP').length ?? 0,
-      downvotes: a.votes?.filter((v) => v.type === 'DOWN').length ?? 0,
+      upvotes: a.votes?.filter((v: any) => v.type === 'UP').length ?? 0,
+      downvotes: a.votes?.filter((v: any) => v.type === 'DOWN').length ?? 0,
+      votes_detail: a.votes?.map((vt: any) => ({ id: vt.id, type: vt.type, created_at: vt.createdAt, by: vt.user })) ?? [],
     }));
 
-    return res.json({ questions: formattedQuestions, answers: formattedAnswers });
+    const formattedComments = (userActivity.comments || []).map((c: any) => ({
+      id: c.id,
+      content: c.content ?? '',
+      created_at: c.createdAt,
+      target_type: c.question ? 'question' : (c.answer ? 'answer' : 'unknown'),
+      target_id: c.question ? c.question.id : (c.answer ? c.answer.id : null),
+      target_title: c.question ? c.question.title : (c.answer ? c.answer.question?.title ?? 'Answer' : 'Comment'),
+      link: c.question ? `/questions/${c.question.id}` : (c.answer ? `/questions/${c.answer.question?.id}` : '#'),
+    }));
+
+    // Votes that the user made
+    const votes_made = (userActivity.votes || []).map((v: any) => ({
+      id: v.id,
+      type: v.type,
+      target_type: v.questionId ? 'question' : (v.answerId ? 'answer' : 'unknown'),
+      target_id: v.questionId ?? v.answerId ?? null,
+      target_title: v.question?.title ?? v.answer?.question?.title ?? 'Post',
+      created_at: v.createdAt,
+    }));
+
+    // Votes received on user's posts (flatten)
+    const votes_received: any[] = [];
+    (userActivity.questions || []).forEach((q: any) => {
+      (q.votes || []).forEach((vt: any) => {
+        votes_received.push({
+          id: vt.id,
+          type: vt.type,
+          post_type: 'question',
+          post_id: q.id,
+          post_title: q.title,
+          by: vt.user ? { id: vt.user.id, username: vt.user.username } : null,
+          created_at: vt.createdAt,
+        });
+      });
+    });
+    (userActivity.answers || []).forEach((a: any) => {
+      (a.votes || []).forEach((vt: any) => {
+        votes_received.push({
+          id: vt.id,
+          type: vt.type,
+          post_type: 'answer',
+          post_id: a.id,
+          post_title: a.question?.title ?? 'Answer',
+          by: vt.user ? { id: vt.user.id, username: vt.user.username } : null,
+          created_at: vt.createdAt,
+        });
+      });
+    });
+
+    return res.json({
+      questions: formattedQuestions,
+      answers: formattedAnswers,
+      comments: formattedComments,
+      votes_made,
+      votes_received,
+    });
   } catch (err) {
     console.error('Unhandled error in getUserActivity:', err);
     return res.status(500).json({ message: 'Server error', details: (err as Error).message });

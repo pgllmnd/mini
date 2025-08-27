@@ -314,53 +314,88 @@ export const vote = async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    // Check if vote already exists
-    let existingVoteQuery;
+    // We'll perform vote insert/update/delete and corresponding reputation updates inside a transaction
+    await pool.query('BEGIN');
+
+    // helper to adjust reputation safely
+    const adjustReputation = async (uid: string, delta: number) => {
+      if (!uid) return;
+      await pool.query('UPDATE "public"."users" SET reputation = reputation + $1 WHERE id = $2', [delta, uid]);
+    };
+
+    // get existing vote (if any)
+    let existingVoteResult;
     if (targetType === 'question') {
-      existingVoteQuery = await pool.query(
-        'SELECT * FROM "public"."votes" WHERE user_id = $1 AND question_id = $2 AND answer_id IS NULL',
-        [userId, targetId]
-      );
+      existingVoteResult = await pool.query('SELECT * FROM "public"."votes" WHERE user_id = $1 AND question_id = $2 AND answer_id IS NULL', [userId, targetId]);
     } else {
-      existingVoteQuery = await pool.query(
-        'SELECT * FROM "public"."votes" WHERE user_id = $1 AND answer_id = $2',
-        [userId, targetId]
-      );
+      existingVoteResult = await pool.query('SELECT * FROM "public"."votes" WHERE user_id = $1 AND answer_id = $2', [userId, targetId]);
     }
 
-    if (existingVoteQuery.rows.length > 0) {
-      if (existingVoteQuery.rows[0].type === normalizedVoteType) {
-        // Remove vote if same type
-        await pool.query(
-          'DELETE FROM "public"."votes" WHERE id = $1',
-          [existingVoteQuery.rows[0].id]
-        );
+    // fetch target author id
+    let targetAuthorId: string | null = null;
+    if (targetType === 'question') {
+      const qRes = await pool.query('SELECT author_id FROM "public"."questions" WHERE id = $1', [targetId]);
+      targetAuthorId = qRes.rows[0] ? qRes.rows[0].author_id : null;
+    } else {
+      const aRes = await pool.query('SELECT author_id, question_id FROM "public"."answers" WHERE id = $1', [targetId]);
+      targetAuthorId = aRes.rows[0] ? aRes.rows[0].author_id : null;
+    }
+
+    const voterId = userId as string;
+
+    // reputation rules (from user):
+    // UP on answer: +10 to answer author
+    // UP on question: +5 to question author
+    // DOWN on any post: -2 to post author
+    // Voter penalty: -1 when user downvotes an answer
+
+    const applyVoteEffect = async (vt: string, tType: string, tAuthor: string | null, voter: string | null, sign = 1) => {
+      // sign = 1 apply; sign = -1 revert
+      if (!tAuthor) return;
+      if (tAuthor === voter) return; // don't change reputation for self-votes
+
+      if (vt === 'UP') {
+        if (tType === 'answer') await adjustReputation(tAuthor, 10 * sign);
+        else await adjustReputation(tAuthor, 5 * sign);
+      } else if (vt === 'DOWN') {
+        await adjustReputation(tAuthor, -2 * sign);
+        // voter penalty for downvoting answers only
+        if (tType === 'answer' && voter) {
+          await adjustReputation(voter, -1 * sign);
+        }
+      }
+    };
+
+    if (existingVoteResult.rows.length > 0) {
+      const existing = existingVoteResult.rows[0];
+      const existingType = existing.type;
+      if (existingType === normalizedVoteType) {
+        // remove vote -> revert its effect
+        // delete vote
+        await pool.query('DELETE FROM "public"."votes" WHERE id = $1', [existing.id]);
+        await applyVoteEffect(existingType, targetType, targetAuthorId, voterId, -1);
       } else {
-        // Update vote if different type
-        await pool.query(
-          'UPDATE "public"."votes" SET type = $1 WHERE id = $2',
-          [normalizedVoteType, existingVoteQuery.rows[0].id]
-        );
+        // switch vote type: revert old, apply new, and update row
+        await pool.query('UPDATE "public"."votes" SET type = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [normalizedVoteType, existing.id]);
+        await applyVoteEffect(existingType, targetType, targetAuthorId, voterId, -1);
+        await applyVoteEffect(normalizedVoteType, targetType, targetAuthorId, voterId, 1);
       }
     } else {
-      // Create new vote
+      // create new vote and apply effect
       const voteId = crypto.randomUUID();
       if (targetType === 'question') {
-        await pool.query(
-          'INSERT INTO "public"."votes" (id, type, question_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-          [voteId, normalizedVoteType, targetId, userId]
-        );
+        await pool.query('INSERT INTO "public"."votes" (id, type, question_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [voteId, normalizedVoteType, targetId, userId]);
       } else {
-        await pool.query(
-          'INSERT INTO "public"."votes" (id, type, answer_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-          [voteId, normalizedVoteType, targetId, userId]
-        );
+        await pool.query('INSERT INTO "public"."votes" (id, type, answer_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [voteId, normalizedVoteType, targetId, userId]);
       }
+      await applyVoteEffect(normalizedVoteType, targetType, targetAuthorId, voterId, 1);
     }
 
+    await pool.query('COMMIT');
     res.json({ message: 'Vote recorded successfully' });
   } catch (err) {
-    console.error(err);
+    try { await pool.query('ROLLBACK'); } catch (_) {}
+    console.error('vote handler error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -380,18 +415,44 @@ export const acceptAnswer = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    // Remove any previously accepted answer
-    await pool.query(
-      'UPDATE "public"."answers" SET is_accepted = false WHERE question_id = $1',
-      [questionId]
-    );
+    // We'll perform acceptance and reputation updates in a transaction
+    await pool.query('BEGIN');
 
-    // Accept the new answer
-    await pool.query(
-      'UPDATE "public"."answers" SET is_accepted = true WHERE id = $1',
-      [answerId]
-    );
+    // find existing accepted answer (if any)
+    const prevRes = await pool.query('SELECT id, author_id FROM "public"."answers" WHERE question_id = $1 AND is_accepted = true', [questionId]);
+    const prev = prevRes.rows[0];
 
+    // if there's a previous accepted and it's the same as the requested, nothing to do
+    if (prev && prev.id === answerId) {
+      await pool.query('COMMIT');
+      return res.json({ message: 'Answer already accepted' });
+    }
+
+    // unset previous accepted and revert reputation if needed
+    if (prev) {
+      await pool.query('UPDATE "public"."answers" SET is_accepted = false WHERE id = $1', [prev.id]);
+      // revert +15 from previous answer author (if different from question author)
+      if (prev.author_id && prev.author_id !== userId) {
+        await pool.query('UPDATE "public"."users" SET reputation = reputation - 15 WHERE id = $1', [prev.author_id]);
+      }
+    }
+
+    // accept new answer
+    await pool.query('UPDATE "public"."answers" SET is_accepted = true WHERE id = $1', [answerId]);
+
+    // give +15 to answer author (unless self-accept)
+    const aRes = await pool.query('SELECT author_id FROM "public"."answers" WHERE id = $1', [answerId]);
+    const answerAuthor = aRes.rows[0] ? aRes.rows[0].author_id : null;
+    if (answerAuthor && answerAuthor !== userId) {
+      await pool.query('UPDATE "public"."users" SET reputation = reputation + 15 WHERE id = $1', [answerAuthor]);
+    }
+
+    // if there was no previous accepted answer, reward the question author +2 for accepting
+    if (!prev) {
+      await pool.query('UPDATE "public"."users" SET reputation = reputation + 2 WHERE id = $1', [userId]);
+    }
+
+    await pool.query('COMMIT');
     res.json({ message: 'Answer accepted successfully' });
   } catch (err) {
     console.error(err);
