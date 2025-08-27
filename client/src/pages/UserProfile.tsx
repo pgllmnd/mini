@@ -134,6 +134,34 @@ export default function UserProfile() {
     }
   }, [routeUsername, isOwnProfile]);
 
+  // Fetch detailed activity (including votes) when Activity tab selected
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityError, setActivityError] = useState('');
+  const [serverActivity, setServerActivity] = useState<any | null>(null);
+
+  const fetchActivity = useCallback(async () => {
+    if (!routeUsername) return;
+    try {
+      setActivityLoading(true);
+      setActivityError('');
+      const token = localStorage.getItem('token');
+      const { data } = await api.get(`/users/${routeUsername}/activity`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      setServerActivity(data);
+    } catch (err: unknown) {
+      setActivityError('Failed to load activity');
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [routeUsername]);
+
+  useEffect(() => {
+    if (activeTab === 'activity') {
+      fetchActivity();
+    }
+  }, [activeTab, fetchActivity]);
+
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
@@ -160,34 +188,153 @@ export default function UserProfile() {
     ? "Vous n'avez pas encore ajouté de bio. Cliquez sur Edit Profile pour en ajouter une."
     : "Cet utilisateur n'a pas encore renseigné de bio.";
 
-  // Build a unified activity timeline from questions and answers
+  // Normalize activity items including questions, answers, comments, votes made and votes received
   interface ActivityItem {
     id: string;
-    type: 'question' | 'answer';
+    kind: 'question' | 'answer' | 'comment' | 'vote_made' | 'vote_received';
     title: string;
     date: string;
     meta?: string;
-    link: string;
+    link?: string;
+    voteType?: 'UP' | 'DOWN';
   }
 
-  const activityItems: ActivityItem[] = [
-    ...userData.questions.map((q) => ({
-      id: `q-${q.id}`,
-      type: 'question' as const,
-      title: q.title,
-      date: q.created_at,
-      meta: `${q.answer_count} answers • ${q.upvotes - q.downvotes} votes`,
-      link: `/questions/${q.id}`,
-    })),
-    ...userData.answers.map((a) => ({
-      id: `a-${a.id}`,
-      type: 'answer' as const,
-      title: a.question_title,
-      date: a.created_at,
-      meta: `${a.upvotes - a.downvotes} votes${a.is_accepted ? ' • accepted' : ''}`,
-      link: `/questions/${a.question_id}`,
-    })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const toActivityItems = (): ActivityItem[] => {
+    const items: ActivityItem[] = [];
+
+    const questionsSrc = (serverActivity?.questions && serverActivity.questions.length > 0) ? serverActivity.questions : userData.questions;
+    (questionsSrc || []).forEach((q: any) => {
+      items.push({
+        id: `q-${q.id}`,
+        kind: 'question',
+        title: q.title,
+        date: q.created_at,
+        meta: `${q.answer_count ?? 0} answers • ${((q.upvotes ?? 0) - (q.downvotes ?? 0))} votes`,
+        link: `/questions/${q.id}`,
+      });
+    });
+
+    const answersSrc = (serverActivity?.answers && serverActivity.answers.length > 0) ? serverActivity.answers : userData.answers;
+    (answersSrc || []).forEach((a: any) => {
+      items.push({
+        id: `a-${a.id}`,
+        kind: 'answer',
+        title: a.question_title,
+        date: a.created_at,
+        meta: `${((a.upvotes ?? 0) - (a.downvotes ?? 0))} votes${a.is_accepted ? ' • accepted' : ''}`,
+        link: `/questions/${a.question_id}`,
+      });
+    });
+
+    // comments (made by the user)
+    (serverActivity?.comments || []).forEach((c: any) => {
+      items.push({
+        id: `c-${c.id}`,
+        kind: 'comment',
+        title: `Commented on: ${c.target_title}`,
+        date: c.created_at,
+        meta: c.content ? (c.content.length > 120 ? c.content.slice(0, 117) + '...' : c.content) : undefined,
+        link: c.link,
+      });
+    });
+
+    // votes made by the user
+    (serverActivity?.votes_made || []).forEach((v: any) => {
+      items.push({
+        id: `vm-${v.id}`,
+        kind: 'vote_made',
+        title: `${v.type === 'UP' ? 'You upvoted' : 'You downvoted'}: ${v.target_title}`,
+        date: v.created_at,
+        voteType: v.type,
+        link: v.target_type === 'question' ? `/questions/${v.target_id}` : `/questions/${v.target_id}`,
+      });
+    });
+
+    // votes received on user's posts
+    (serverActivity?.votes_received || []).forEach((v: any) => {
+      items.push({
+        id: `vr-${v.id}`,
+        kind: 'vote_received',
+        title: `${v.type === 'UP' ? 'Upvote received' : 'Downvote received'} on: ${v.post_title}`,
+        date: v.created_at,
+        voteType: v.type,
+        link: v.post_type === 'question' ? `/questions/${v.post_id}` : `/questions/${v.post_id}`,
+      });
+    });
+
+    return items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
+  const activityItems = toActivityItems();
+
+  // Group by date: Today / Yesterday / Earlier
+  const isSameDay = (d1Str: string, d2: Date) => {
+    const d1 = new Date(d1Str);
+    return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+  };
+
+  const grouped: { today: ActivityItem[]; yesterday: ActivityItem[]; earlier: ActivityItem[] } = { today: [], yesterday: [], earlier: [] };
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+
+  activityItems.forEach((it) => {
+    if (isSameDay(it.date, now)) grouped.today.push(it);
+    else if (isSameDay(it.date, yesterday)) grouped.yesterday.push(it);
+    else grouped.earlier.push(it);
+  });
+
+  function ActivityRow({ item }: { item: ActivityItem }) {
+    const icon = () => {
+      switch (item.kind) {
+        case 'question':
+          return <span className="material-symbols-outlined">help</span>;
+        case 'answer':
+          return <span className="material-symbols-outlined">chat_bubble</span>;
+        case 'comment':
+          return <span className="material-symbols-outlined">comment</span>;
+        case 'vote_made':
+        case 'vote_received':
+          return item.voteType === 'UP' ? <span className="material-symbols-outlined">thumb_up</span> : <span className="material-symbols-outlined">thumb_down</span>;
+        default:
+          return <span className="material-symbols-outlined">history</span>;
+      }
+    };
+
+    const bgClass = item.kind === 'question' ? 'bg-blue-500' : item.kind === 'answer' ? 'bg-green-500' : item.kind === 'comment' ? 'bg-gray-500' : (item.voteType === 'UP' ? 'bg-teal-500' : 'bg-red-500');
+
+    return (
+      <div className="p-4 rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-opacity-70 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start space-x-3">
+          <div className="flex-shrink-0 mt-1">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${bgClass}`}>
+              {icon()}
+            </div>
+          </div>
+
+          <div className="text-left">
+            <Link
+              to={item.link ?? '#'}
+              className="text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:text-primary-light dark:hover:text-primary-dark"
+            >
+              {item.title}
+            </Link>
+
+            <div className="mt-1 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+              <span>{new Date(item.date).toLocaleString()}</span>
+              {item.meta && (
+                <><span className="mx-2">•</span><span>{item.meta}</span></>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 md:mt-0 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+          <span className="hidden md:inline">{item.kind.replace('_', ' ')}</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4">
@@ -368,47 +515,53 @@ export default function UserProfile() {
 
           {activeTab === 'activity' && (
             <div className="space-y-4">
-              {activityItems.length === 0 && (
+              {activityLoading && (
+                <div className="text-text-secondary-light dark:text-text-secondary-dark text-center py-8">Loading activity...</div>
+              )}
+
+              {activityError && (
+                <div className="text-red-600 dark:text-red-400 text-center py-4">{activityError}</div>
+              )}
+
+              {!activityLoading && activityItems.length === 0 && (
                 <div className="text-text-secondary-light dark:text-text-secondary-dark text-center py-8">
                   No recent activity.
                 </div>
               )}
 
-              <div className="space-y-3">
-                {activityItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-4 rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-opacity-70 flex flex-col md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-1">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${item.type === 'question' ? 'bg-blue-500' : 'bg-green-500'}`}>
-                          {item.type === 'question' ? <span className="material-symbols-outlined">help</span> : <span className="material-symbols-outlined">chat_bubble</span>}
-                        </div>
-                      </div>
-
-                      <div className="text-left">
-                        <Link
-                          to={item.link}
-                          className="text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:text-primary-light dark:hover:text-primary-dark"
-                        >
-                          {item.title}
-                        </Link>
-
-                        <div className="mt-1 text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                          <span>{new Date(item.date).toLocaleString()}</span>
-                          {item.meta && (
-                            <><span className="mx-2">•</span><span>{item.meta}</span></>
-                          )}
-                        </div>
-                      </div>
+              <div className="space-y-6">
+                {grouped.today.length > 0 && (
+                  <section>
+                    <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Today</h4>
+                    <div className="space-y-3">
+                      {grouped.today.map((item) => (
+                        <ActivityRow key={item.id} item={item} />
+                      ))}
                     </div>
+                  </section>
+                )}
 
-                    <div className="mt-3 md:mt-0 text-xs text-text-secondary-light dark:text-text-secondary-dark">
-                      <span className="hidden md:inline">{item.type === 'question' ? 'Asked' : 'Answered'}</span>
+                {grouped.yesterday.length > 0 && (
+                  <section>
+                    <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Yesterday</h4>
+                    <div className="space-y-3">
+                      {grouped.yesterday.map((item) => (
+                        <ActivityRow key={item.id} item={item} />
+                      ))}
                     </div>
-                  </div>
-                ))}
+                  </section>
+                )}
+
+                {grouped.earlier.length > 0 && (
+                  <section>
+                    <h4 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Earlier</h4>
+                    <div className="space-y-3">
+                      {grouped.earlier.map((item) => (
+                        <ActivityRow key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
             </div>
           )}
