@@ -39,7 +39,7 @@ export const useCreateQuestion = () => {
       const { data } = await api.post('/questions', questionData);
       return data;
     },
-    onSuccess: (newQuestion) => {
+  onSuccess: (newQuestion: any) => {
       // Mise à jour optimiste du cache
       queryClient.setQueryData(queryKeys.questions, (old: any[]) => {
         return [newQuestion, ...(old || [])];
@@ -57,7 +57,7 @@ export const useVote = () => {
       const { data } = await api.post(`/questions/${questionId}/vote`, { voteType });
       return data;
     },
-    onSuccess: (updatedQuestion) => {
+  onSuccess: (updatedQuestion: any) => {
       // Mise à jour optimiste du cache
       queryClient.setQueryData(
         queryKeys.question(updatedQuestion.id),

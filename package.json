@@ -17,6 +17,7 @@
     "start": "cd server && npm run start"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.85.5",
     "concurrently": "^8.2.1"
   }
 }

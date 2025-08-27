@@ -66,7 +66,15 @@ export const getAllUsers = async (req: Request, res: Response) => {
     });
 
     // Format response
-    const formattedUsers = users.map(user => ({
+    const formattedUsers = users.map((user: {
+      id: string;
+      username: string;
+      reputation: number;
+      _count: {
+        questions: number;
+        answers: number;
+      };
+    }) => ({
       id: user.id,
       username: user.username,
       reputation: user.reputation,
