@@ -160,6 +160,35 @@ export default function UserProfile() {
     ? "Vous n'avez pas encore ajouté de bio. Cliquez sur Edit Profile pour en ajouter une."
     : "Cet utilisateur n'a pas encore renseigné de bio.";
 
+  // Build a unified activity timeline from questions and answers
+  interface ActivityItem {
+    id: string;
+    type: 'question' | 'answer';
+    title: string;
+    date: string;
+    meta?: string;
+    link: string;
+  }
+
+  const activityItems: ActivityItem[] = [
+    ...userData.questions.map((q) => ({
+      id: `q-${q.id}`,
+      type: 'question' as const,
+      title: q.title,
+      date: q.created_at,
+      meta: `${q.answer_count} answers • ${q.upvotes - q.downvotes} votes`,
+      link: `/questions/${q.id}`,
+    })),
+    ...userData.answers.map((a) => ({
+      id: `a-${a.id}`,
+      type: 'answer' as const,
+      title: a.question_title,
+      date: a.created_at,
+      meta: `${a.upvotes - a.downvotes} votes${a.is_accepted ? ' • accepted' : ''}`,
+      link: `/questions/${a.question_id}`,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
   return (
     <div className="max-w-4xl mx-auto px-4">
       <div className="card mb-6 overflow-hidden">
@@ -338,8 +367,49 @@ export default function UserProfile() {
           )}
 
           {activeTab === 'activity' && (
-            <div className="text-text-secondary-light dark:text-text-secondary-dark text-center py-8">
-              Activity timeline coming soon...
+            <div className="space-y-4">
+              {activityItems.length === 0 && (
+                <div className="text-text-secondary-light dark:text-text-secondary-dark text-center py-8">
+                  No recent activity.
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {activityItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 rounded-lg bg-surface-light dark:bg-surface-dark hover:bg-opacity-70 flex flex-col md:flex-row md:items-center md:justify-between"
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${item.type === 'question' ? 'bg-blue-500' : 'bg-green-500'}`}>
+                          {item.type === 'question' ? <span className="material-symbols-outlined">help</span> : <span className="material-symbols-outlined">chat_bubble</span>}
+                        </div>
+                      </div>
+
+                      <div className="text-left">
+                        <Link
+                          to={item.link}
+                          className="text-sm font-medium text-text-primary-light dark:text-text-primary-dark hover:text-primary-light dark:hover:text-primary-dark"
+                        >
+                          {item.title}
+                        </Link>
+
+                        <div className="mt-1 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                          <span>{new Date(item.date).toLocaleString()}</span>
+                          {item.meta && (
+                            <><span className="mx-2">•</span><span>{item.meta}</span></>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 md:mt-0 text-xs text-text-secondary-light dark:text-text-secondary-dark">
+                      <span className="hidden md:inline">{item.type === 'question' ? 'Asked' : 'Answered'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
