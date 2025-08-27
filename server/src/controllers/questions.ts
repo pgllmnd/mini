@@ -16,6 +16,16 @@ interface AuthRequest extends Request {
   };
 }
 
+// Centralized reputation values — change here to tune site rules
+const REPUTATION = {
+  UP_ANSWER: 10,      // +10 when an answer is upvoted
+  UP_QUESTION: 5,     // +5 when a question is upvoted
+  ACCEPT_ANSWER: 15,  // +15 when an answer is accepted
+  ACCEPT_GIVER: 2,    // +2 when the question author accepts an answer
+  DOWN_POST: 2,       // -2 to post author when downvoted
+  DOWN_VOTER: 1       // -1 penalty to voter when they downvote an answer
+};
+
 export const getQuestions = async (req: Request, res: Response) => {
   try {
     // Accept 'q' (used by the client SearchBar) or 'search' as the keyword param
@@ -354,16 +364,16 @@ export const vote = async (req: AuthRequest, res: Response) => {
       if (!tAuthor) return;
       if (tAuthor === voter) return; // don't change reputation for self-votes
 
-      if (vt === 'UP') {
-        if (tType === 'answer') await adjustReputation(tAuthor, 10 * sign);
-        else await adjustReputation(tAuthor, 5 * sign);
-      } else if (vt === 'DOWN') {
-        await adjustReputation(tAuthor, -2 * sign);
-        // voter penalty for downvoting answers only
-        if (tType === 'answer' && voter) {
-          await adjustReputation(voter, -1 * sign);
+        if (vt === 'UP') {
+          if (tType === 'answer') await adjustReputation(tAuthor, REPUTATION.UP_ANSWER * sign);
+          else await adjustReputation(tAuthor, REPUTATION.UP_QUESTION * sign);
+        } else if (vt === 'DOWN') {
+          await adjustReputation(tAuthor, -REPUTATION.DOWN_POST * sign);
+          // voter penalty for downvoting answers only
+          if (tType === 'answer' && voter) {
+            await adjustReputation(voter, -REPUTATION.DOWN_VOTER * sign);
+          }
         }
-      }
     };
 
     if (existingVoteResult.rows.length > 0) {
@@ -431,9 +441,9 @@ export const acceptAnswer = async (req: AuthRequest, res: Response) => {
     // unset previous accepted and revert reputation if needed
     if (prev) {
       await pool.query('UPDATE "public"."answers" SET is_accepted = false WHERE id = $1', [prev.id]);
-      // revert +15 from previous answer author (if different from question author)
+      // revert ACCEPT_ANSWER from previous answer author (if different from question author)
       if (prev.author_id && prev.author_id !== userId) {
-        await pool.query('UPDATE "public"."users" SET reputation = reputation - 15 WHERE id = $1', [prev.author_id]);
+        await pool.query('UPDATE "public"."users" SET reputation = reputation - $1 WHERE id = $2', [REPUTATION.ACCEPT_ANSWER, prev.author_id]);
       }
     }
 
@@ -444,12 +454,12 @@ export const acceptAnswer = async (req: AuthRequest, res: Response) => {
     const aRes = await pool.query('SELECT author_id FROM "public"."answers" WHERE id = $1', [answerId]);
     const answerAuthor = aRes.rows[0] ? aRes.rows[0].author_id : null;
     if (answerAuthor && answerAuthor !== userId) {
-      await pool.query('UPDATE "public"."users" SET reputation = reputation + 15 WHERE id = $1', [answerAuthor]);
+      await pool.query('UPDATE "public"."users" SET reputation = reputation + $1 WHERE id = $2', [REPUTATION.ACCEPT_ANSWER, answerAuthor]);
     }
 
     // if there was no previous accepted answer, reward the question author +2 for accepting
     if (!prev) {
-      await pool.query('UPDATE "public"."users" SET reputation = reputation + 2 WHERE id = $1', [userId]);
+      await pool.query('UPDATE "public"."users" SET reputation = reputation + $1 WHERE id = $2', [REPUTATION.ACCEPT_GIVER, userId]);
     }
 
     await pool.query('COMMIT');

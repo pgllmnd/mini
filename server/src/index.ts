@@ -50,9 +50,18 @@ app.use(cors({
 console.log('CORS allowed origins:', allowedOrigins);
 // Middleware
 app.use(express.json());
-app.use(express.json());
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+
+// Import cache control middleware
+import { setCacheControl } from './middleware/cacheControl';
+
+// Apply cache control to all routes
+app.use(setCacheControl);
+
+// Serve uploaded files with cache control
+app.use('/uploads', express.static('uploads', {
+  maxAge: 60 * 60 * 24 * 30 * 1000, // 30 days cache
+  etag: true
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);

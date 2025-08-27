@@ -11,6 +11,16 @@ interface AuthRequest extends Request {
   };
 }
 
+// Reputation constants (kept in sync with questions controller)
+const REPUTATION = {
+  UP_ANSWER: 10,
+  UP_QUESTION: 5,
+  ACCEPT_ANSWER: 15,
+  ACCEPT_GIVER: 2,
+  DOWN_POST: 2,
+  DOWN_VOTER: 1,
+};
+
 // Configure multer for file upload
 const avatarsDir = path.join(process.cwd(), 'uploads', 'avatars');
 if (!fs.existsSync(avatarsDir)) {
@@ -247,12 +257,15 @@ export const getProfile = async (req: Request, res: Response) => {
 
           if (!minimal) return res.status(404).json({ message: 'User not found' });
 
+          const fallbackReputation = typeof minimal.reputation === 'number' ? minimal.reputation : Number(minimal.reputation || 0);
+          console.warn(`getProfile fallback: user=${minimal.username} id=${minimal.id} reputation=${fallbackReputation}`);
+
           return res.json({
             id: minimal.id,
             username: minimal.username,
             email: minimal.email,
             created_at: minimal.createdAt,
-            reputation: minimal.reputation,
+            reputation: fallbackReputation,
             avatar_url: minimal.avatar_url,
             // Without questions/answers/bio available in this fallback
             questions: [],
@@ -269,7 +282,7 @@ export const getProfile = async (req: Request, res: Response) => {
       return res.status(500).json({ message: 'Database error', details: pErr?.message });
     }
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+  if (!user) return res.status(404).json({ message: 'User not found' });
 
     const formattedQuestions = (user.questions || []).map((q: QuestionRel) => ({
       id: q.id,
@@ -292,13 +305,17 @@ export const getProfile = async (req: Request, res: Response) => {
       downvotes: a.votes?.filter((v) => v.type === 'DOWN').length ?? 0,
     }));
 
+    // Ensure reputation is a plain number (Prisma may return JS number but normalize for safety)
+    const reputationNumber = typeof user.reputation === 'number' ? user.reputation : Number(user.reputation || 0);
+    console.log(`getProfile: user=${user.username} id=${user.id} reputation=${reputationNumber}`);
+
     return res.json({
       id: user.id,
       username: user.username,
       email: user.email,
       bio: (user as any).bio ?? null,
       created_at: user.createdAt,
-      reputation: user.reputation,
+      reputation: reputationNumber,
       avatar_url: user.avatar_url,
       questions: formattedQuestions,
       answers: formattedAnswers,
@@ -493,6 +510,56 @@ export const getUserActivity = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error('Unhandled error in getUserActivity:', err);
+    return res.status(500).json({ message: 'Server error', details: (err as Error).message });
+  }
+};
+
+// Recompute reputation for a user from current votes/accepts in DB.
+// This is a utility endpoint to fix reputation when past votes were added
+// without updating reputation. It follows the same rules used elsewhere:
+// UP on answers: +10, UP on questions: +5, DOWN on any post: -2 to post author,
+// accepted answer: +15 to answer author, +2 to question author who accepts,
+// voter penalty: -1 when a user downvotes an answer (penalty to voter).
+export const recomputeReputation = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ message: 'Missing user identifier' });
+
+    // Resolve lookup similar to getProfile: username or id
+    const lookup = isUuidV4(id) ? { id } : { username: id };
+    const user = await prisma.user.findUnique({ where: lookup as any });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const userId = user.id;
+
+    // Votes received on user's answers (exclude self-votes)
+    const upAnswers = await prisma.vote.count({ where: { type: 'UP', answer: { authorId: userId }, NOT: { userId: userId } } });
+    const downAnswers = await prisma.vote.count({ where: { type: 'DOWN', answer: { authorId: userId }, NOT: { userId: userId } } });
+
+    // Votes received on user's questions (exclude self-votes)
+    const upQuestions = await prisma.vote.count({ where: { type: 'UP', question: { authorId: userId }, NOT: { userId: userId } } });
+    const downQuestions = await prisma.vote.count({ where: { type: 'DOWN', question: { authorId: userId }, NOT: { userId: userId } } });
+
+    // Accepted answers authored by user
+    const acceptedAnswers = await prisma.answer.count({ where: { authorId: userId, isAccepted: true } });
+
+    // Accepts given by user (question author accepted an answer authored by someone else)
+    const acceptsGiven = await prisma.answer.count({ where: { isAccepted: true, question: { authorId: userId }, NOT: { authorId: userId } } });
+
+    // Downvotes made by user on answers (voter penalty)
+    const downvotesMadeOnAnswers = await prisma.vote.count({ where: { type: 'DOWN', userId: userId, answerId: { not: null } } });
+
+    const reputation =
+      upAnswers * REPUTATION.UP_ANSWER - downAnswers * REPUTATION.DOWN_POST +
+      upQuestions * REPUTATION.UP_QUESTION - downQuestions * REPUTATION.DOWN_POST +
+      acceptedAnswers * REPUTATION.ACCEPT_ANSWER + acceptsGiven * REPUTATION.ACCEPT_GIVER -
+      downvotesMadeOnAnswers * REPUTATION.DOWN_VOTER;
+
+    // Persist the computed reputation
+    await prisma.user.update({ where: { id: userId }, data: { reputation } });
+
+    return res.json({ id: userId, username: user.username, reputation });
+  } catch (err) {
+    console.error('Error recomputing reputation:', err);
     return res.status(500).json({ message: 'Server error', details: (err as Error).message });
   }
 };
