@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../lib/api';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
