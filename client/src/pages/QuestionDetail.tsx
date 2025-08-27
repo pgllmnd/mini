@@ -171,12 +171,12 @@ function QuestionDetail() {
             <div key={answer.id} className={`p-6 rounded-lg ${answer.is_accepted ? 'border-2' : ''}`} style={{ backgroundColor: 'var(--card)', border: answer.is_accepted ? '2px solid #22c55e' : '1px solid var(--border)', boxShadow: '0 6px 18px rgba(2,6,23,0.04)' }}>
               <div className="flex items-start space-x-4">
                 <div className="flex flex-col items-center sticky top-4">
-                  <button onClick={() => handleVote('up', 'answer', answer.id)} style={{ color: 'var(--text-secondary)' }}>
-                    <span className="material-symbols-outlined">arrow_upward</span>
+                  <button className="vote-btn" onClick={() => handleVote('up', 'answer', answer.id)} aria-label="Upvote">
+                    <span style={{fontSize: '18px'}}>↑</span>
                   </button>
-                  <span className="my-1" style={{ color: 'var(--text-primary)' }}>{answer.upvotes - answer.downvotes}</span>
-                  <button onClick={() => handleVote('down', 'answer', answer.id)} style={{ color: 'var(--text-secondary)' }}>
-                    <span className="material-symbols-outlined">arrow_downward</span>
+                  <span className="vote-count">{answer.upvotes - answer.downvotes}</span>
+                  <button className="vote-btn" onClick={() => handleVote('down', 'answer', answer.id)} aria-label="Downvote">
+                    <span style={{fontSize: '18px'}}>↓</span>
                   </button>
                   {user && 
                    question.author_username === user.username && 
