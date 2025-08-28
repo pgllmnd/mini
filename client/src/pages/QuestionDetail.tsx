@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../lib/api';
-import ReactMarkdown from 'react-markdown';
+import { MarkdownContent } from '../components/MarkdownContent';
 import { useAuth } from '../hooks/useAuth';
 import { CommentSection } from '../components/CommentSection';
 
@@ -143,14 +143,18 @@ function QuestionDetail() {
             </button>
           </div>
           <div className="prose max-w-none flex-1" style={{ color: 'var(--text-primary)' }}>
-            <ReactMarkdown>{question.content}</ReactMarkdown>
+            <MarkdownContent content={question.content} />
           </div>
         </div>
 
         <div className="mt-4 flex items-center justify-between pt-4" style={{ borderTop: '1px solid var(--border)' }}>
           <div className="flex gap-2">
-            {question.tags.map((tag) => (
-              <span key={tag} className="px-2 py-1 rounded text-sm" style={{ backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}>
+            {question.tags.map((tag, index) => (
+              <span 
+                key={`${tag}-${index}`} 
+                className="px-2 py-1 rounded text-sm" 
+                style={{ backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}
+              >
                 {tag}
               </span>
             ))}
@@ -189,13 +193,8 @@ function QuestionDetail() {
                     </button>
                   )}
                 </div>
-                <div className="prose max-w-none flex-1 md-editor">
-                  <div className="editor">
-                    <ReactMarkdown>{answer.content}</ReactMarkdown>
-                  </div>
-                  <div className="preview">
-                    <ReactMarkdown>{answer.content}</ReactMarkdown>
-                  </div>
+                <div className="prose max-w-none flex-1">
+                  <MarkdownContent content={answer.content} />
                 </div>
               </div>
 

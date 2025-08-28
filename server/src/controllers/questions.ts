@@ -271,6 +271,8 @@ export const createQuestion = async (req: AuthRequest, res: Response) => {
   }
 };
 
+import { sendNewAnswerNotification } from '../utils/email';
+
 export const addAnswer = async (req: AuthRequest, res: Response) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -282,11 +284,46 @@ export const addAnswer = async (req: AuthRequest, res: Response) => {
     const { content } = req.body;
     const userId = req.user?.id;
 
+    // Get question and author details first
+    const questionResult = await pool.query(
+      'SELECT q.title, u.email, u.username FROM questions q JOIN users u ON q.author_id = u.id WHERE q.id = $1',
+      [questionId]
+    );
+
+    if (questionResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    const question = questionResult.rows[0];
+
+    // Get answerer's username
+    const userResult = await pool.query(
+      'SELECT username FROM users WHERE id = $1',
+      [userId]
+    );
+
+    const answererUsername = userResult.rows[0]?.username || 'Someone';
+
+    // Create the answer
     const answerId = crypto.randomUUID();
     const result = await pool.query(
       'INSERT INTO "public"."answers" (id, content, author_id, question_id, created_at, updated_at, is_accepted) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, false) RETURNING *',
       [answerId, content, userId, questionId]
     );
+
+    // Send email notification to question author
+    try {
+      await sendNewAnswerNotification(
+        question.email,
+        question.username,
+        question.title,
+        answererUsername,
+        questionId
+      );
+    } catch (emailError) {
+      console.error('Failed to send answer notification email:', emailError);
+      // Don't return error to client, continue with answer creation
+    }
 
     const row = result.rows[0];
     // Normalize DB snake_case timestamps to camelCase for frontend

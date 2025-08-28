@@ -48,4 +48,11 @@ router.post('/login', [
     (0, express_validator_1.body)('email').isEmail(),
     (0, express_validator_1.body)('password').exists()
 ], authController.login);
+router.post('/forgot-password', [
+    (0, express_validator_1.body)('email').isEmail()
+], authController.forgotPassword);
+router.post('/reset-password', [
+    (0, express_validator_1.body)('token').notEmpty(),
+    (0, express_validator_1.body)('newPassword').isLength({ min: 6 })
+], authController.resetPassword);
 exports.default = router;

@@ -24,4 +24,19 @@ router.post('/login',
   authController.login
 );
 
+router.post('/forgot-password',
+  [
+    body('email').isEmail()
+  ],
+  authController.forgotPassword
+);
+
+router.post('/reset-password',
+  [
+    body('token').notEmpty(),
+    body('newPassword').isLength({ min: 6 })
+  ],
+  authController.resetPassword
+);
+
 export default router;

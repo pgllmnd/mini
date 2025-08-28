@@ -37,7 +37,7 @@ export default function Chat() {
       <h2 className="text-2xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Assistant</h2>
       <div className="rounded-md p-4 h-96 overflow-auto" style={{ backgroundColor: 'var(--card)', border: '1px solid var(--border)' }}>
         {messages.map((m, i) => (
-          <div key={i} className={`mb-3 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+          <div key={`${m.role}-${i}-${m.text.substring(0, 10)}`} className={`mb-3 ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
             <div className={`inline-block px-3 py-2 rounded`} style={m.role === 'user' ? { backgroundColor: 'var(--primary)', color: 'white' } : { backgroundColor: 'var(--surface)', color: 'var(--text-primary)' }}>
               {m.text}
             </div>

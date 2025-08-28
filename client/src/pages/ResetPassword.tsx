@@ -1,20 +1,26 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import api from '../lib/api';
 
-function Register() {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
+function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { token } = useParams();
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -29,10 +35,17 @@ function Register() {
     setLoading(true);
 
     try {
-      await register(email, password, username);
-      navigate('/');
-    } catch (err) {
-      setError('Registration failed. Please check your information.');
+      await api.post('/auth/reset-password', {
+        token,
+        newPassword: password,
+      });
+
+      setSuccess('Password has been reset successfully');
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to reset password');
     } finally {
       setLoading(false);
     }
@@ -40,7 +53,7 @@ function Register() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Register</h1>
+      <h1 className="text-3xl font-bold mb-6">Reset Password</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -48,38 +61,16 @@ function Register() {
         </div>
       )}
 
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {success}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="username" className="block text-gray-700 mb-2">
-            Username
-          </label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full p-2 border rounded"
-            required
-          />
-        </div>
-
-        <div>
           <label htmlFor="password" className="block text-gray-700 mb-2">
-            Password
+            New Password
           </label>
           <input
             id="password"
@@ -95,7 +86,7 @@ function Register() {
 
         <div>
           <label htmlFor="confirmPassword" className="block text-gray-700 mb-2">
-            Confirm Password
+            Confirm New Password
           </label>
           <input
             id="confirmPassword"
@@ -114,11 +105,19 @@ function Register() {
             loading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          {loading ? 'Creating account...' : 'Register'}
+          {loading ? 'Resetting Password...' : 'Reset Password'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/login')}
+          className="w-full text-blue-500 hover:text-blue-600 text-center mt-4"
+        >
+          Back to Login
         </button>
       </form>
     </div>
   );
 }
 
-export default Register;
+export default ResetPassword;

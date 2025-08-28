@@ -41,6 +41,10 @@ const router = (0, express_1.Router)();
 router.get('/', userController.getAllUsers);
 // Get user profile
 router.get('/:id', userController.getProfile);
+// Recompute reputation from votes/accepts (admin/dev utility)
+router.post('/:id/recompute-reputation', userController.recomputeReputation);
+// Alternative path to avoid parameter routing precedence issues
+router.post('/recompute-reputation/:id', userController.recomputeReputation);
 // Upload avatar (auth -> multer -> handler)
 router.post('/avatar', auth_1.auth, userController.avatarUploadMiddleware, userController.uploadAvatar);
 // Temporary test route (no auth) to validate upload flow during development

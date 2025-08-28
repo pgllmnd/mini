@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -21,12 +54,31 @@ Object.defineProperty(exports, "getAnswerComments", { enumerable: true, get: fun
 Object.defineProperty(exports, "getQuestionComments", { enumerable: true, get: function () { return comments_1.getQuestionComments; } });
 Object.defineProperty(exports, "addAnswerComment", { enumerable: true, get: function () { return comments_1.addAnswerComment; } });
 Object.defineProperty(exports, "addQuestionComment", { enumerable: true, get: function () { return comments_1.addQuestionComment; } });
+// Centralized reputation values — change here to tune site rules
+const REPUTATION = {
+    UP_ANSWER: 10, // +10 when an answer is upvoted
+    UP_QUESTION: 5, // +5 when a question is upvoted
+    ACCEPT_ANSWER: 15, // +15 when an answer is accepted
+    ACCEPT_GIVER: 2, // +2 when the question author accepts an answer
+    DOWN_POST: 2, // -2 to post author when downvoted
+    DOWN_VOTER: 1 // -1 penalty to voter when they downvote an answer
+};
 const getQuestions = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
         // Accept 'q' (used by the client SearchBar) or 'search' as the keyword param
         const { sort = 'newest' } = req.query;
         const rawSearch = (_a = req.query.q) !== null && _a !== void 0 ? _a : req.query.search;
+        // Persist initial request info for debugging
+        try {
+            const fs = yield Promise.resolve().then(() => __importStar(require('fs')));
+            fs.mkdirSync('tmp', { recursive: true });
+            const startLine = `--- getQuestions request at ${new Date().toISOString()} ---\nSORT: ${String(sort)}\nRAW_SEARCH: ${String(rawSearch)}\n\n`;
+            fs.appendFileSync('tmp/sql_error.log', startLine);
+        }
+        catch (_e) {
+            // ignore file logging errors
+        }
         let query = `
       SELECT 
         q.*,
@@ -74,8 +126,38 @@ const getQuestions = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             default:
                 query += ` ORDER BY q.created_at DESC`;
         }
-        const result = yield database_1.pool.query(query, values);
-        res.json(result.rows);
+        // Persist the final SQL and parameter values
+        try {
+            const fs = yield Promise.resolve().then(() => __importStar(require('fs')));
+            const logLine = `--- getQuestions SQL at ${new Date().toISOString()} ---\nQUERY:\n${query}\nVALUES:${JSON.stringify(values)}\n\n`;
+            fs.appendFileSync('tmp/sql_error.log', logLine);
+        }
+        catch (_e) {
+            // ignore file logging errors
+        }
+        try {
+            const result = yield database_1.pool.query(query, values);
+            res.json(result.rows);
+        }
+        catch (sqlErr) {
+            // Persist SQL error for debugging
+            try {
+                const fs = yield Promise.resolve().then(() => __importStar(require('fs')));
+                const errLine = `--- SQL ERROR at ${new Date().toISOString()} ---\nERROR: ${String(sqlErr)}\nQUERY:\n${query}\nVALUES:${JSON.stringify(values)}\n\n`;
+                fs.appendFileSync('tmp/sql_error.log', errLine);
+            }
+            catch (_e) { }
+            console.error('SQL Error in getQuestions:', sqlErr);
+            // If DB is unreachable, return an empty list (friendly fallback for local dev)
+            if (String(sqlErr).includes('SSL/TLS required') || String(sqlErr).includes('ECONNRESET') || String(sqlErr).includes('connect')) {
+                return res.json([]);
+            }
+            // In development, return the SQL error message to help debugging
+            if (process.env.NODE_ENV !== 'production') {
+                return res.status(500).json({ message: String(sqlErr) });
+            }
+            return res.status(500).json({ message: 'Server error' });
+        }
     }
     catch (err) {
         console.error(err);
@@ -239,26 +321,76 @@ const vote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!userId) {
             return res.status(401).json({ message: 'User not authenticated' });
         }
-        // Check if vote already exists
-        let existingVoteQuery;
+        // We'll perform vote insert/update/delete and corresponding reputation updates inside a transaction
+        yield database_1.pool.query('BEGIN');
+        // helper to adjust reputation safely
+        const adjustReputation = (uid, delta) => __awaiter(void 0, void 0, void 0, function* () {
+            if (!uid)
+                return;
+            yield database_1.pool.query('UPDATE "public"."users" SET reputation = reputation + $1 WHERE id = $2', [delta, uid]);
+        });
+        // get existing vote (if any)
+        let existingVoteResult;
         if (targetType === 'question') {
-            existingVoteQuery = yield database_1.pool.query('SELECT * FROM "public"."votes" WHERE user_id = $1 AND question_id = $2 AND answer_id IS NULL', [userId, targetId]);
+            existingVoteResult = yield database_1.pool.query('SELECT * FROM "public"."votes" WHERE user_id = $1 AND question_id = $2 AND answer_id IS NULL', [userId, targetId]);
         }
         else {
-            existingVoteQuery = yield database_1.pool.query('SELECT * FROM "public"."votes" WHERE user_id = $1 AND answer_id = $2', [userId, targetId]);
+            existingVoteResult = yield database_1.pool.query('SELECT * FROM "public"."votes" WHERE user_id = $1 AND answer_id = $2', [userId, targetId]);
         }
-        if (existingVoteQuery.rows.length > 0) {
-            if (existingVoteQuery.rows[0].type === normalizedVoteType) {
-                // Remove vote if same type
-                yield database_1.pool.query('DELETE FROM "public"."votes" WHERE id = $1', [existingVoteQuery.rows[0].id]);
+        // fetch target author id
+        let targetAuthorId = null;
+        if (targetType === 'question') {
+            const qRes = yield database_1.pool.query('SELECT author_id FROM "public"."questions" WHERE id = $1', [targetId]);
+            targetAuthorId = qRes.rows[0] ? qRes.rows[0].author_id : null;
+        }
+        else {
+            const aRes = yield database_1.pool.query('SELECT author_id, question_id FROM "public"."answers" WHERE id = $1', [targetId]);
+            targetAuthorId = aRes.rows[0] ? aRes.rows[0].author_id : null;
+        }
+        const voterId = userId;
+        // reputation rules (from user):
+        // UP on answer: +10 to answer author
+        // UP on question: +5 to question author
+        // DOWN on any post: -2 to post author
+        // Voter penalty: -1 when user downvotes an answer
+        const applyVoteEffect = (vt_1, tType_1, tAuthor_1, voter_1, ...args_1) => __awaiter(void 0, [vt_1, tType_1, tAuthor_1, voter_1, ...args_1], void 0, function* (vt, tType, tAuthor, voter, sign = 1) {
+            // sign = 1 apply; sign = -1 revert
+            if (!tAuthor)
+                return;
+            if (tAuthor === voter)
+                return; // don't change reputation for self-votes
+            if (vt === 'UP') {
+                if (tType === 'answer')
+                    yield adjustReputation(tAuthor, REPUTATION.UP_ANSWER * sign);
+                else
+                    yield adjustReputation(tAuthor, REPUTATION.UP_QUESTION * sign);
+            }
+            else if (vt === 'DOWN') {
+                yield adjustReputation(tAuthor, -REPUTATION.DOWN_POST * sign);
+                // voter penalty for downvoting answers only
+                if (tType === 'answer' && voter) {
+                    yield adjustReputation(voter, -REPUTATION.DOWN_VOTER * sign);
+                }
+            }
+        });
+        if (existingVoteResult.rows.length > 0) {
+            const existing = existingVoteResult.rows[0];
+            const existingType = existing.type;
+            if (existingType === normalizedVoteType) {
+                // remove vote -> revert its effect
+                // delete vote
+                yield database_1.pool.query('DELETE FROM "public"."votes" WHERE id = $1', [existing.id]);
+                yield applyVoteEffect(existingType, targetType, targetAuthorId, voterId, -1);
             }
             else {
-                // Update vote if different type
-                yield database_1.pool.query('UPDATE "public"."votes" SET type = $1 WHERE id = $2', [normalizedVoteType, existingVoteQuery.rows[0].id]);
+                // switch vote type: revert old, apply new, and update row
+                yield database_1.pool.query('UPDATE "public"."votes" SET type = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [normalizedVoteType, existing.id]);
+                yield applyVoteEffect(existingType, targetType, targetAuthorId, voterId, -1);
+                yield applyVoteEffect(normalizedVoteType, targetType, targetAuthorId, voterId, 1);
             }
         }
         else {
-            // Create new vote
+            // create new vote and apply effect
             const voteId = crypto_1.default.randomUUID();
             if (targetType === 'question') {
                 yield database_1.pool.query('INSERT INTO "public"."votes" (id, type, question_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [voteId, normalizedVoteType, targetId, userId]);
@@ -266,11 +398,17 @@ const vote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             else {
                 yield database_1.pool.query('INSERT INTO "public"."votes" (id, type, answer_id, user_id, created_at, updated_at) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)', [voteId, normalizedVoteType, targetId, userId]);
             }
+            yield applyVoteEffect(normalizedVoteType, targetType, targetAuthorId, voterId, 1);
         }
+        yield database_1.pool.query('COMMIT');
         res.json({ message: 'Vote recorded successfully' });
     }
     catch (err) {
-        console.error(err);
+        try {
+            yield database_1.pool.query('ROLLBACK');
+        }
+        catch (_) { }
+        console.error('vote handler error:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });
@@ -285,10 +423,37 @@ const acceptAnswer = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (question.rows[0].author_id !== userId) {
             return res.status(403).json({ message: 'Not authorized' });
         }
-        // Remove any previously accepted answer
-        yield database_1.pool.query('UPDATE "public"."answers" SET is_accepted = false WHERE question_id = $1', [questionId]);
-        // Accept the new answer
+        // We'll perform acceptance and reputation updates in a transaction
+        yield database_1.pool.query('BEGIN');
+        // find existing accepted answer (if any)
+        const prevRes = yield database_1.pool.query('SELECT id, author_id FROM "public"."answers" WHERE question_id = $1 AND is_accepted = true', [questionId]);
+        const prev = prevRes.rows[0];
+        // if there's a previous accepted and it's the same as the requested, nothing to do
+        if (prev && prev.id === answerId) {
+            yield database_1.pool.query('COMMIT');
+            return res.json({ message: 'Answer already accepted' });
+        }
+        // unset previous accepted and revert reputation if needed
+        if (prev) {
+            yield database_1.pool.query('UPDATE "public"."answers" SET is_accepted = false WHERE id = $1', [prev.id]);
+            // revert ACCEPT_ANSWER from previous answer author (if different from question author)
+            if (prev.author_id && prev.author_id !== userId) {
+                yield database_1.pool.query('UPDATE "public"."users" SET reputation = reputation - $1 WHERE id = $2', [REPUTATION.ACCEPT_ANSWER, prev.author_id]);
+            }
+        }
+        // accept new answer
         yield database_1.pool.query('UPDATE "public"."answers" SET is_accepted = true WHERE id = $1', [answerId]);
+        // give +15 to answer author (unless self-accept)
+        const aRes = yield database_1.pool.query('SELECT author_id FROM "public"."answers" WHERE id = $1', [answerId]);
+        const answerAuthor = aRes.rows[0] ? aRes.rows[0].author_id : null;
+        if (answerAuthor && answerAuthor !== userId) {
+            yield database_1.pool.query('UPDATE "public"."users" SET reputation = reputation + $1 WHERE id = $2', [REPUTATION.ACCEPT_ANSWER, answerAuthor]);
+        }
+        // if there was no previous accepted answer, reward the question author +2 for accepting
+        if (!prev) {
+            yield database_1.pool.query('UPDATE "public"."users" SET reputation = reputation + $1 WHERE id = $2', [REPUTATION.ACCEPT_GIVER, userId]);
+        }
+        yield database_1.pool.query('COMMIT');
         res.json({ message: 'Answer accepted successfully' });
     }
     catch (err) {
