@@ -2,74 +2,29 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 
-interface ResetPasswordFormData {
-  token: string;
-  password: string;
-  confirmPassword: string;
-}
-
-interface ApiError {
-  message: string;
-}
-
-function ResetPassword() {
-  const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState<ResetPasswordFormData>({
-    token: '',
-    password: '',
-    confirmPassword: '',
-  });
+function InitiateReset() {
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const validateForm = (): boolean => {
-    if (formData.password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères');
-      return false;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('Les mots de passe ne correspondent pas');
-      return false;
-    }
-    return true;
-  };
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
-
-    if (!validateForm()) return;
-
     setLoading(true);
 
     try {
-      await api.post<{ message: string } | ApiError>(
-        '/auth/reset-password',
-        {
-          token: formData.token,
-          newPassword: formData.password
-        }
-      );
-
+      await api.post('/auth/forgot-password', { email });
       setSuccess(true);
-      // Redirection vers la page de connexion après 3 secondes
+      // On attend 3 secondes avant de rediriger vers la page de saisie du token
       setTimeout(() => {
-        navigate('/login', { replace: true });
+        navigate('/reset-password');
       }, 3000);
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
-        'Une erreur est survenue lors de la réinitialisation du mot de passe'
+        'Une erreur est survenue lors de l\'envoi de l\'email'
       );
     } finally {
       setLoading(false);
@@ -83,10 +38,13 @@ function ResetPassword() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Réinitialisation du mot de passe
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Entrez votre email pour recevoir un code de réinitialisation
+          </p>
         </div>
 
         {error && (
-          <div className="rounded-md bg-red-50 p-4 mb-4">
+          <div className="rounded-md bg-red-50 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -110,60 +68,27 @@ function ResetPassword() {
               </div>
               <div className="ml-3">
                 <p className="text-sm text-green-700">
-                  Votre mot de passe a été réinitialisé avec succès ! Redirection en cours...
+                  Un email contenant le code de réinitialisation vous a été envoyé. Vous allez être redirigé vers la page de réinitialisation...
                 </p>
               </div>
             </div>
           </div>
         ) : (
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="token" className="block text-sm font-medium text-gray-700">
-                  Code de réinitialisation
-                </label>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Adresse email
+              </label>
+              <div className="mt-1">
                 <input
-                  id="token"
-                  name="token"
-                  type="text"
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Collez le code reçu par email"
-                  value={formData.token}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Nouveau mot de passe
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mt-1"
-                  placeholder="Minimum 8 caractères"
-                  value={formData.password}
-                  onChange={handleChange}
-                  minLength={8}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirmer le mot de passe
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mt-1"
-                  placeholder="Retapez votre mot de passe"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -172,7 +97,7 @@ function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
                   loading
                     ? 'bg-blue-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
@@ -184,7 +109,7 @@ function ResetPassword() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                 ) : null}
-                {loading ? 'Réinitialisation en cours...' : 'Réinitialiser le mot de passe'}
+                {loading ? 'Envoi en cours...' : 'Envoyer le code de réinitialisation'}
               </button>
             </div>
           </form>
@@ -208,4 +133,4 @@ function ResetPassword() {
   );
 }
 
-export default ResetPassword;
+export default InitiateReset;

@@ -5,7 +5,7 @@ import PrivateRoute from './components/PrivateRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
+import InitiateReset from './pages/InitiateReset';
 import ResetPassword from './pages/ResetPassword';
 import AskQuestion from './pages/AskQuestion';
 import QuestionDetail from './pages/QuestionDetail';
@@ -30,8 +30,8 @@ export const router = createBrowserRouter([
       { path: 'questions', element: <Home /> },
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
-      { path: 'forgot-password', element: <ForgotPassword /> },
-      { path: 'reset-password/:token', element: <ResetPassword /> },
+      { path: 'forgot-password', element: <InitiateReset /> },
+      { path: 'reset-password', element: <ResetPassword /> },
       { path: 'tags', element: <Tags /> },
       { path: 'users', element: <Users /> },
       { path: 'users/:username', element: <UserProfile /> },
