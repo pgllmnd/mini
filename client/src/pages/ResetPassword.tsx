@@ -58,7 +58,7 @@ function ResetPassword() {
     setLoading(true);
 
     try {
-      const response = await api.post<{ message: string } | ApiError>(
+      await api.post<{ message: string } | ApiError>(
         '/auth/reset-password',
         {
           token,
