@@ -127,7 +127,7 @@ export const AcceptButton: React.FC<AcceptButtonProps> = ({
       onClick={() => toggleAccept()}
       aria-label={localAccepted ? 'Désaccepter la réponse' : 'Accepter la réponse'}
       type="button"
-      disabled={status === 'pending'}
+      disabled={status === 'loading'}
     >
       <span aria-hidden>
         {localAccepted ? (

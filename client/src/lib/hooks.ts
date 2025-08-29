@@ -41,8 +41,8 @@ export const useCreateQuestion = () => {
     },
   onSuccess: (newQuestion: any) => {
       // Mise à jour optimiste du cache
-      queryClient.setQueryData(queryKeys.questions, (old: any[]) => {
-        return [newQuestion, ...(old || [])];
+      queryClient.setQueryData(queryKeys.questions, (old: any[] | undefined) => {
+        return [newQuestion, ...(old ?? [])];
       });
     },
   });
