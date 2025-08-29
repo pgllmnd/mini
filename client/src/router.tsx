@@ -40,33 +40,12 @@ export const router = createBrowserRouter([
       { path: 'users', element: <Users /> },
       { path: 'users/:username', element: <UserProfile /> },
       { path: 'user/:username', element: <UserProfile /> },
-  { path: 'assistant', element: <Chat /> },
-      {
-        path: 'companies',
-        element: (
-          <div className="p-8 text-center text-gray-600">
-            Companies page coming soon...
-          </div>
-        ),
-      },
-      {
-        path: 'collectives/explore',
-        element: (
-          <div className="p-8 text-center text-gray-600">
-            Collectives page coming soon...
-          </div>
-        ),
-      },
-      {
-        path: 'teams',
-        element: (
-          <div className="p-8 text-center text-gray-600">
-            Teams page coming soon...
-          </div>
-        ),
-      },
-  { path: 'blog', element: <ComingSoon /> },
-  { path: 'annonces', element: <ComingSoon /> },
-    ],
-  },
+      { path: 'assistant', element: <Chat /> },
+      { path: 'companies', element: <ComingSoon /> },
+      { path: 'collectives/explore', element: <ComingSoon /> },
+      { path: 'teams', element: <ComingSoon /> },
+      { path: 'blog', element: <ComingSoon /> },
+      { path: 'annonces', element: <ComingSoon /> }
+    ]
+  }
 ]);
