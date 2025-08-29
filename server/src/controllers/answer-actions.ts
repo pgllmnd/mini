@@ -1,15 +1,11 @@
-import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
+// Use `any` for express request/response here to avoid hard dependency
+// on `@types/express` in environments where it's not installed.
+// The handlers still perform runtime checks for `req.user`.
 
 // Vote sur une réponse
-export const voteAnswer = async (req: AuthRequest, res: Response) => {
+export const voteAnswer = async (req: any, res: any) => {
   try {
     const { answerId } = req.params;
     const { voteType } = req.body; // 'up' ou 'down'
@@ -61,7 +57,7 @@ export const voteAnswer = async (req: AuthRequest, res: Response) => {
 };
 
 // Accepter une réponse
-export const acceptAnswer = async (req: AuthRequest, res: Response) => {
+export const acceptAnswer = async (req: any, res: any) => {
   try {
     const { answerId } = req.params;
     const userId = req.user?.id;
