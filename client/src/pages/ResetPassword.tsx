@@ -196,7 +196,7 @@ function ResetPassword() {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="text-blue-600 hover:text-blue-500"
+                className="text-[var(--link-color)] hover:opacity-90"
               >
                 Retour à la connexion
               </button>

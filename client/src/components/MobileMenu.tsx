@@ -89,6 +89,15 @@ export default function MobileMenu({ isOpen, onClose, user, logout, toggleTheme,
 						)}
 					</div>
 
+					{/* Mobile language selector */}
+					<div className="border-t mt-3 pt-3 px-2">
+						<label htmlFor="mobile-locale" className="text-xs text-[var(--text-secondary)] block mb-1">Langue</label>
+						<select id="mobile-locale" defaultValue={typeof window !== 'undefined' ? (localStorage.getItem('locale') || 'fr') : 'fr'} onChange={(e) => { try { localStorage.setItem('locale', e.target.value); } catch {} window.location.reload(); }} className="w-full p-2 rounded-md bg-[var(--surface)] text-[var(--text-primary)]">
+							<option value="fr">🇫🇷 Français</option>
+							<option value="en">EN English</option>
+						</select>
+					</div>
+
 					<div className="border-t mt-3 pt-3">
 						<button onClick={() => { toggleTheme?.(); onClose(); }} className="w-full text-left px-2 py-2 rounded hover:bg-[var(--surface)]" style={{ color: 'var(--text-primary)' }}>
 							{theme === 'dark' ? 'Switch to light' : 'Switch to dark'}

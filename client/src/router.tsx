@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import Layout from './components/Layout';
+import { LanguageProvider } from './hooks/LanguageContext';
 import { AuthProvider } from './hooks/useAuth';
 import PrivateRoute from './components/PrivateRoute';
 import Home from './pages/Home';
@@ -13,13 +14,16 @@ import UserProfile from './pages/UserProfile';
 import Tags from './pages/Tags';
 import Users from './pages/Users';
 import Chat from './pages/Chat';
+import ComingSoon from './pages/ComingSoon';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: (
       <AuthProvider>
-        <Layout />
+        <LanguageProvider>
+          <Layout />
+        </LanguageProvider>
       </AuthProvider>
     ),
     children: [
@@ -61,6 +65,8 @@ export const router = createBrowserRouter([
           </div>
         ),
       },
+  { path: 'blog', element: <ComingSoon /> },
+  { path: 'annonces', element: <ComingSoon /> },
     ],
   },
 ]);

@@ -4,28 +4,30 @@
 
 /* Theme variables for consistent light/dark palettes */
 :root {
-  --bg: #FFFFFF; /* page background - white */
-  --card: #FFFFFF; /* cards, surfaces - white */
-  --surface: #F5F5F5; /* subtle surface - light gray */
-  --border: #E5E5E5; /* border - light gray */
-  --text-primary: #0f172a; /* primary text - dark */
-  --text-secondary: #9ca3af; /* secondary text - light gray */
-  --primary: #F97316; /* accent (orange) */
-  --link-color: #1E40AF; /* links/buttons primary blue */
-  --tag-popular: #FACC15; /* popular tag yellow */
+  --bg: #FFFFFF;
+  --card: #FFFFFF;
+  --surface: #FAFBFE;
+  --border: #E6E9F2;
+  --text-primary: #0f172a;
+  --text-secondary: #35373c;
+  --primary: #b56148ef;  /* Indigo moderne */
+  --secondary: #4e2e9b; /* Violet */
+  --gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  --link-color: #391575ef;
+  --tag-popular: #faf38b;
 }
 
 .dark {
-  /* Nouvelle palette sombre plus chaude et élégante */
-  --bg: #13161b; /* Fond de page - gris anthracite chaud */
-  --card: #0e1116; /* Cartes - gris ardoise */
-  --surface: #0c0f15; /* Surfaces - gris bleuté */
-  --border: #00000000; /* Bordures - gris avec une teinte bleue */
-  --text-primary: #e9ecef; /* Texte principal - blanc cassé */
-  --text-secondary: #a0aec0; /* Texte secondaire - gris clair */
-  --primary: #fe904b; /* Accent - orange plus vif et chaleureux */
-  --link-color: #63b3ed; /* Liens - bleu plus doux */
-  --tag-popular: #84841f; /* Tag populaire - jaune orangé */
+  /* Dark palette: cooler, soft and legible */
+  --bg: #0b1220;
+  --card: #0f1724;
+  --surface: #0b1320;
+  --border: rgba(255,255,255,0.04);
+  --text-primary: #e6eef8;
+  --text-secondary: #9aa6bf;
+  --primary: #60a5fa;
+  --link-color: #60a5fa;
+  --tag-popular: #ede13a;
 }
 
 /* Global smooth theme transitions */
@@ -54,13 +56,73 @@ body {
   min-height: 100vh;
 }
 
+/* Question card layout */
+/* compact question-card styles are defined later with enhanced visuals */
+
+.vote-column {
+  width: 78px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Skeleton loaders */
+.skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 50%, rgba(0,0,0,0.04) 100%);
+  border-radius: 8px;
+  height: 12px;
+  width: 100%;
+  animation: skeleton-loading 1.2s infinite linear;
+}
+
+.skeleton-sm { height: 10px; width: 36px; }
+.skeleton-line { height: 14px; }
+.skeleton-line.short { width: 60%; }
+.skeleton-chip { height: 28px; width: 90px; border-radius: 9999px; }
+.skeleton-chip.small { width: 56px; }
+
+@keyframes skeleton-loading {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+/* subtle appear animation */
+.animate-appear { animation: appear 360ms cubic-bezier(.2,.85,.2,1) both; }
+@keyframes appear { from { opacity: 0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+.icon-muted { color: var(--text-secondary); }
+
+/* filter pills */
+.filter-pill {
+  padding: .35rem .6rem;
+  border-radius: 9999px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+}
+.filter-pill.active {
+  background: var(--gradient);
+  color: white;
+  border-color: transparent;
+}
+
+/* bookmark button styling */
+.bookmark-btn svg { color: var(--text-secondary); }
+.bookmark-btn:hover svg { color: var(--primary); transform: scale(1.05); }
+
+
+
 /* Cards */
 .card {
   background-color: var(--card);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   box-shadow: 0 6px 18px rgba(2,6,23,0.06);
   border: 1px solid var(--border);
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .card:hover {
@@ -75,16 +137,82 @@ body {
   box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
+/* Elevated card style for Home list to feel modern */
+.question-card {
+  /* much subtler card border: remove the strong gradient "border" and fall back to
+     a very low-contrast outline so the layout stays clean and airy */
+  border: 1px solid rgba(23, 7, 2, 0.189);
+  background-image: none;
+  background-color: var(--card);
+  background-origin: initial;
+  background-clip: initial;
+}
+
+.question-card:hover {
+  transform: translateY(-2px);
+  /* softer hover shadow so the lift is gentle */
+  box-shadow: 0 10px 22px rgba(2,6,23,0.06);
+}
+
+/* Avatar placeholder */
+.avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(37,99,235,0.08));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--primary);
+  margin-right: 6px;
+}
+
+/* Author avatar (list) */
+.author-avatar img {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Tag dropdown menu */
+.tag-dropdown { position: relative; }
+.tag-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  z-index: 40;
+}
+.tag-menu .tag-list { max-height: 220px; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.tag-menu .tag-item { background: transparent; border: none; padding: 0.5rem 0.6rem; text-align: left; cursor: pointer; border-radius: 8px; color: var(--text-primary); }
+.tag-menu .tag-item:hover { background: rgba(0,0,0,0.03); }
+
+/* subtle gradient border accent for popular tags */
+.tag-badge.blue { 
+  background: linear-gradient(90deg, rgba(59,130,246,0.08), rgba(99,102,241,0.06));
+  color: #1E40AF; 
+}
+
+.tag-badge.gray { 
+  background: linear-gradient(90deg, rgba(107,114,128,0.06), rgba(148,163,184,0.04));
+  color: #334155; 
+}
+
 /* Inputs */
 input, select, textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--border);
   background-color: var(--card);
   color: var(--text-primary);
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  transition: all 0.24s cubic-bezier(.2,.9,.2,1);
 }
 
 input:focus, select:focus, textarea:focus {
@@ -100,29 +228,39 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Buttons */
-button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  background-color: var(--primary);
-  color: white;
-  border: none;
+.btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 180ms cubic-bezier(.2,.9,.2,1);
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-button:hover {
-  filter: brightness(1.1);
+.btn-primary {
+  background-color: var(--gradient);
+  color: white;
+  border: none;
+  box-shadow: 0 6px 18px rgba(37,99,235,0.08);
+}
+
+.btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(249,115,22,0.2);
+  box-shadow: 0 12px 30px rgba(37,99,235,0.12);
 }
 
-button:active { 
-  transform: translateY(0) scale(0.98); 
+.btn-secondary {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
 }
 
-.dark button:hover {
-  box-shadow: 0 8px 20px rgba(254, 144, 75, 0.3);
+.btn-secondary:hover {
+  background-color: var(--border);
+  transform: translateY(-1px);
 }
 
 /* Nav and links */
@@ -137,19 +275,19 @@ a {
 }
 
 a:hover { 
-  color: var(--primary);
+  color: var(--secondary);
   text-decoration: underline;
 }
 
 /* Utility modern classes */
 .btn-modern { 
-  background-color: var(--primary); 
+  background-color: var(--gradient); 
   color: white; 
-  padding: 0.75rem 1.5rem; 
-  border-radius: 0.75rem; 
+  padding: 0.5rem 0.9rem; 
+  border-radius: 0.5rem; 
   font-weight: 600;
   border: none;
-  transition: all 0.3s ease;
+  transition: all 0.24s cubic-bezier(.2,.9,.2,1);
 }
 
 .btn-modern:hover {
@@ -159,11 +297,27 @@ a:hover {
 
 .btn-outline { 
   background: transparent; 
-  border: 2px solid var(--border); 
+  border: 1px solid var(--border); 
   color: var(--text-primary); 
-  padding: 0.6rem 1.25rem; 
-  border-radius: 0.75rem; 
-  transition: all 0.3s ease;
+  padding: 0.45rem 0.9rem; 
+  border-radius: 0.5rem; 
+  transition: all 0.24s cubic-bezier(.2,.9,.2,1);
+}
+
+/* link-like button used for small actions (no box) */
+.btn-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--link-color);
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-link:hover {
+  opacity: 0.9;
+  text-decoration: underline;
 }
 
 .btn-outline:hover {
@@ -176,8 +330,8 @@ a:hover {
 .surface { 
   background-color: var(--surface); 
   border: 1px solid var(--border); 
-  border-radius: 0.75rem; 
-  padding: 1.5rem;
+  border-radius: 0.5rem; 
+  padding: 1rem;
 }
 
 /* Smooth small UI details */
@@ -206,6 +360,78 @@ a:hover {
   padding: 2rem 1rem; 
 }
 
+/* Home hero banner */
+.home-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.25rem;
+  background: linear-gradient(180deg, rgba(250,250,255,0.6), rgba(250,250,255,0.4));
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+
+.hero-actions .btn-modern { padding: 0.6rem 1rem; }
+.home-hero p { max-width: 52ch; }
+
+
+
+/* Sidebar enhancements */
+.sidebar-root { padding-right: 0; }
+.sidebar-card {
+  padding: 0.6rem;
+  border-radius: 8px;
+  background-color: var(--card);
+  border: 1px solid rgba(2,6,23,0.03);
+}
+.sidebar-cta {
+  display: inline-block;
+  padding: 0.45rem 0.7rem;
+  background: var(--gradient);
+  color: white;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.quick-link { color: var(--text-primary); text-decoration: none; padding: 0.35rem; border-radius: 6px; display: block; }
+.quick-link:hover { background: var(--surface); }
+.tag-pill { background: rgba(59,130,246,0.08); color: #1E40AF; padding: 0.25rem 0.5rem; border-radius: 9999px; font-weight: 600; font-size: 0.8rem; }
+.resource-link { color: var(--link-color); text-decoration: none; }
+
+/* Sidebar language selector styling */
+.sidebar-locale-container { padding-bottom: 0.5rem; }
+.locale-wrapper { position: relative; }
+.locale-icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  pointer-events: none;
+}
+.locale-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding: 0.55rem 0.9rem;
+  padding-left: 2.6rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--card), var(--surface));
+  color: var(--text-primary);
+}
+.sidebar-locale-container .locale-select { font-size: 0.95rem; }
+
+@media (max-width: 1024px) {
+  .mobile-menu-panel select, .mobile-menu-panel input {
+    font-size: 0.95rem;
+  }
+}
+.resource-link:hover { text-decoration: underline; }
+.chat-cta { border-radius: 10px; font-weight: 700; }
+
+
 /* Mobile menu backdrop and panel animations */
 .mobile-menu-backdrop { 
   background: rgba(2,6,23,0.4); 
@@ -216,9 +442,6 @@ a:hover {
   transform: translateX(-8px); 
   transition: transform 0.3s cubic-bezier(.2,.9,.2,1); 
   background-color: var(--card);
-}
-
-.mobile-menu-panel { 
   animation: slideIn 0.3s cubic-bezier(.2,.9,.2,1) both; 
 }
 
@@ -283,44 +506,56 @@ a:hover {
   font-weight: 500; 
 }
 
-.tag-badge.blue { 
-  background: rgba(30,64,175,0.12); 
-  color: #1E40AF; 
+/* Compact tag variant used on Home to reduce visual clutter */
+.tag-badge.compact {
+  padding: .2rem .45rem;
+  font-size: .78rem;
+  gap: .35rem;
+  border-radius: 9999px;
+}
+.tag-badge.compact .tag-text { 
+  display: inline-block; 
+  max-width: 10ch; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
 }
 
-.tag-badge.gray { 
-  background: rgba(148,163,184,0.12); 
-  color: #334155; 
+/* On very small screens only show icon to save space */
+@media (max-width: 520px) {
+  .tag-badge.compact .tag-text { display: none; }
 }
+
+
 
 .dark .tag-badge {
   border-color: rgba(255,255,255,0.1);
 }
 
 /* Votes */
-.vote-btn { 
-  display:flex; 
-  flex-direction:column; 
-  align-items:center; 
-  gap:6px; 
-  padding:.5rem; 
-  background:transparent; 
-  border:none; 
-  cursor:pointer; 
-  color:var(--text-secondary);
-  border-radius: 0.5rem;
+.vote-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: .35rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-radius: 0.4rem;
   transition: all 0.2s ease;
 }
 
-.vote-btn:hover { 
-  color: var(--primary); 
-  transform: translateY(-2px); 
-  background-color: var(--surface);
+.vote-btn:hover {
+  color: var(--primary);
+  transform: translateY(-3px) scale(1.03);
+  background-color: rgba(37,99,235,0.04);
 }
 
-.vote-count { 
-  font-weight:700; 
-  color:var(--text-primary); 
+.vote-count {
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* Markdown editor preview */
@@ -386,6 +621,84 @@ a:hover {
 .dark .btn-outline { 
   color: var(--text-primary) !important;
   border-color: var(--border);
+}
+
+/* Compact vote tweaks and form helpers (merged earlier) */
+
+/* Form layout helpers to keep primary actions bottom-aligned */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form .form-footer {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Accept answer button: minimalist, elegant */
+.accept-answer-btn {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  /* slightly visible surface by default so the button isn't invisible on white */
+  background: var(--surface);
+  border: 1px solid rgba(15,23,42,0.06);
+  color: var(--primary);
+  transition: all 180ms cubic-bezier(.2,.9,.2,1);
+}
+
+.accept-answer-btn:hover {
+  transform: translateY(-3px);
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(37,99,235,0.04);
+}
+
+.accept-answer-btn.accepted {
+  background: linear-gradient(90deg, rgba(37,99,235,0.12), rgba(99,102,241,0.08));
+  color: white;
+  border: none;
+  box-shadow: 0 8px 20px rgba(37,99,235,0.12);
+}
+
+/* Ensure any inline SVG inside the accept button sizes and inherits color */
+.accept-answer-btn svg {
+  width: 18px;
+  height: 18px;
+  display: block;
+  fill: currentColor;
+}
+
+.accept-tooltip {
+  position: absolute;
+  top: -2.1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(12,17,26,0.9);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.accept-answer-btn.group:hover .accept-tooltip,
+.accept-answer-btn.group:focus .accept-tooltip,
+.accept-answer-btn.group:active .accept-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
 }
 
 .dark .btn-outline:hover {
@@ -471,4 +784,9 @@ a:hover {
   100% {
     box-shadow: 0 0 0 0 rgba(254, 144, 75, 0);
   }
+}
+
+.btn-primary-custom {
+  font-weight: 500;
+  text-align: center;
 }

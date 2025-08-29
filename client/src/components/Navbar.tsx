@@ -12,6 +12,7 @@ function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const navigate = useNavigate();
@@ -82,6 +83,24 @@ function Navbar() {
                   {theme === 'dark' ? 'light_mode' : 'dark_mode'}
                 </span>
               </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 1700);
+                  } catch (e) {
+                    console.error('Failed to copy url', e);
+                  }
+                }}
+                className="p-2 rounded-full text-sm shadow-sm hover:shadow-md transition"
+                aria-label="Share page"
+                style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid transparent' }}
+              >
+                <span className="material-symbols-outlined">share</span>
+              </button>
+              {copiedUrl && <span style={{ fontSize: 12, color: 'var(--text-secondary)', marginLeft: 6 }}>Link copied</span>}
 
               <Link
                 to="/questions/ask"

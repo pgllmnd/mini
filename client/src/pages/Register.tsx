@@ -17,12 +17,12 @@ function Register() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Les mots de passe ne correspondent pas');
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
 
@@ -32,7 +32,7 @@ function Register() {
       await register(email, password, username);
       navigate('/');
     } catch (err) {
-      setError('Registration failed. Please check your information.');
+      setError("L'inscription a échoué. Vérifiez vos informations.");
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ function Register() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Register</h1>
+      <h1 className="text-3xl font-bold mb-6">Inscription</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -48,10 +48,10 @@ function Register() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="form">
         <div>
           <label htmlFor="email" className="block text-gray-700 mb-2">
-            Email
+            Adresse e-mail
           </label>
           <input
             id="email"
@@ -65,7 +65,7 @@ function Register() {
 
         <div>
           <label htmlFor="username" className="block text-gray-700 mb-2">
-            Username
+            Nom d'utilisateur
           </label>
           <input
             id="username"
@@ -79,7 +79,7 @@ function Register() {
 
         <div>
           <label htmlFor="password" className="block text-gray-700 mb-2">
-            Password
+            Mot de passe
           </label>
           <input
             id="password"
@@ -90,12 +90,12 @@ function Register() {
             required
             minLength={6}
           />
-          <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters long</p>
+          <p className="text-xs text-gray-500 mt-1">Doit contenir au moins 6 caractères</p>
         </div>
 
         <div>
           <label htmlFor="confirmPassword" className="block text-gray-700 mb-2">
-            Confirm Password
+            Confirmer le mot de passe
           </label>
           <input
             id="confirmPassword"
@@ -107,15 +107,28 @@ function Register() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading ? 'Creating account...' : 'Register'}
-        </button>
+        <div className="form-footer">
+          <button
+  type="submit"
+  disabled={loading}
+  className={`w-full text-white p-2 rounded ${
+    loading ? 'opacity-50 cursor-not-allowed' : ''
+  }`}
+  style={{
+    backgroundColor: 'var(--primary)',
+    transition: 'background-color 0.2s ease',
+  }}
+  onMouseEnter={(e) => {
+    if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#9a3e28'; // un peu plus foncé au hover
+  }}
+  onMouseLeave={(e) => {
+    if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--primary)';
+  }}
+>
+  {loading ? 'Création du compte...' : "S'inscrire"}
+</button>
+
+        </div>
       </form>
     </div>
   );

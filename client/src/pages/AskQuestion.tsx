@@ -24,11 +24,11 @@ function AskQuestion() {
         .filter(tag => tag);
 
       if (formattedTags.length > 5) {
-        setError('Please enter no more than 5 tags');
+        setError('Veuillez saisir au maximum 5 tags');
         return;
       }
 
-  const { data } = await api.post('/questions', {
+      const { data } = await api.post('/questions', {
         title,
         content,
         tags: formattedTags,
@@ -36,7 +36,7 @@ function AskQuestion() {
 
       navigate(`/question/${data.id}`);
     } catch (err) {
-      setError('Failed to create question. Please try again.');
+      setError("Échec de la création de la question. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -44,7 +44,7 @@ function AskQuestion() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Ask a Question</h1>
+      <h1 className="text-3xl font-bold mb-6">Poser une question</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -52,10 +52,10 @@ function AskQuestion() {
         </div>
       )}
 
-  <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-gray-700 mb-2">
-            Title
+            Titre
           </label>
           <input
             id="title"
@@ -63,7 +63,7 @@ function AskQuestion() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="w-full p-2 border rounded"
-            placeholder="What's your question? Be specific."
+            placeholder="Quelle est votre question ? Soyez précis."
             required
           />
         </div>
@@ -71,14 +71,14 @@ function AskQuestion() {
         <div>
           <div className="flex justify-between items-center mb-2">
             <label htmlFor="content" className="text-gray-700">
-              Content
+              Contenu
             </label>
             <button
               type="button"
               onClick={() => setPreview(!preview)}
-              className="text-sm text-blue-500 hover:text-blue-600"
+              className="text-sm text-[var(--link-color)] hover:opacity-90"
             >
-              {preview ? 'Edit' : 'Preview'}
+              {preview ? 'Modifier' : 'Aperçu'}
             </button>
           </div>
 
@@ -89,7 +89,7 @@ function AskQuestion() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="w-full p-2 border rounded h-64"
-                placeholder="Describe your question in detail. You can use Markdown for formatting."
+                placeholder="Décrivez votre question en détail. Vous pouvez utiliser Markdown pour le formatage."
                 required
               />
             </div>
@@ -98,7 +98,7 @@ function AskQuestion() {
             </div>
           </div>
           <p className="mt-1 text-sm text-gray-500">
-            Markdown formatting is supported
+            Le formatage Markdown est pris en charge
           </p>
         </div>
 
@@ -112,22 +112,33 @@ function AskQuestion() {
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             className="w-full p-2 border rounded"
-            placeholder="Add up to 5 tags separated by commas (e.g., javascript, react, node.js)"
+            placeholder="Ajoutez jusqu'à 5 tags séparés par des virgules (ex : javascript, react, node.js)"
           />
           <p className="mt-1 text-sm text-gray-500">
-            Add up to 5 tags to describe what your question is about
+            Ajoutez jusqu'à 5 tags pour décrire votre question
           </p>
         </div>
 
         <button
-          type="submit"
-          disabled={loading}
-          className={`bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading ? 'Posting...' : 'Post Your Question'}
-        </button>
+  type="submit"
+  disabled={loading}
+  className={`text-white px-4 py-2 rounded ${
+    loading ? 'opacity-50 cursor-not-allowed' : ''
+  }`}
+  style={{
+    backgroundColor: 'var(--primary)',
+    transition: 'background-color 0.2s ease',
+  }}
+  onMouseEnter={(e) => {
+    if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#9a3e28';
+  }}
+  onMouseLeave={(e) => {
+    if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--primary)';
+  }}
+>
+  {loading ? 'Publication en cours...' : 'Publier la question'}
+</button>
+
       </form>
     </div>
   );

@@ -168,8 +168,32 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-xl text-[var(--text-secondary)]">Loading...</div>
+      <div className="max-w-4xl mx-auto p-4 space-y-6">
+        <div className="card p-6">
+          <div className="flex items-center gap-4">
+            <div className="skeleton skeleton-sm" style={{ width: 96, height: 96, borderRadius: 999 }} />
+            <div style={{ flex: 1 }}>
+              <div className="skeleton skeleton-line" style={{ width: '40%', height: 24 }} />
+              <div className="skeleton skeleton-line short mt-2" style={{ width: '30%' }} />
+              <div className="skeleton skeleton-line mt-3" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="card p-4">
+            <div className="skeleton skeleton-line" style={{ width: '70%' }} />
+            <div className="mt-3 skeleton skeleton-line short" />
+          </div>
+          <div className="card p-4">
+            <div className="skeleton skeleton-line" style={{ width: '70%' }} />
+            <div className="mt-3 skeleton skeleton-line short" />
+          </div>
+          <div className="card p-4">
+            <div className="skeleton skeleton-line" style={{ width: '70%' }} />
+            <div className="mt-3 skeleton skeleton-line short" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -177,7 +201,7 @@ export default function UserProfile() {
   if (error || !userData) {
     return (
       <div className="text-center text-red-600 dark:text-red-400">
-        {error || 'User not found'}
+        {error || 'Utilisateur introuvable'}
       </div>
     );
   }
@@ -207,9 +231,9 @@ export default function UserProfile() {
       items.push({
         id: `q-${q.id}`,
         kind: 'question',
-        title: q.title,
+      title: q.title,
         date: q.created_at,
-        meta: `${q.answer_count ?? 0} answers • ${((q.upvotes ?? 0) - (q.downvotes ?? 0))} votes`,
+        meta: `${q.answer_count ?? 0} réponses • ${((q.upvotes ?? 0) - (q.downvotes ?? 0))} votes`,
         link: `/questions/${q.id}`,
       });
     });
@@ -221,7 +245,7 @@ export default function UserProfile() {
         kind: 'answer',
         title: a.question_title,
         date: a.created_at,
-        meta: `${((a.upvotes ?? 0) - (a.downvotes ?? 0))} votes${a.is_accepted ? ' • accepted' : ''}`,
+        meta: `${((a.upvotes ?? 0) - (a.downvotes ?? 0))} votes${a.is_accepted ? ' • acceptée' : ''}`,
         link: `/questions/${a.question_id}`,
       });
     });
@@ -243,7 +267,7 @@ export default function UserProfile() {
       items.push({
         id: `vm-${v.id}`,
         kind: 'vote_made',
-        title: `${v.type === 'UP' ? 'You upvoted' : 'You downvoted'}: ${v.target_title}`,
+  title: `${v.type === 'UP' ? 'Vous avez voté positivement' : 'Vous avez voté négativement'}: ${v.target_title}`,
         date: v.created_at,
         voteType: v.type,
         link: v.target_type === 'question' ? `/questions/${v.target_id}` : `/questions/${v.target_id}`,
@@ -255,7 +279,7 @@ export default function UserProfile() {
       items.push({
         id: `vr-${v.id}`,
         kind: 'vote_received',
-        title: `${v.type === 'UP' ? 'Upvote received' : 'Downvote received'} on: ${v.post_title}`,
+  title: `${v.type === 'UP' ? 'Vote positif reçu' : 'Vote négatif reçu'} sur : ${v.post_title}`,
         date: v.created_at,
         voteType: v.type,
         link: v.post_type === 'question' ? `/questions/${v.post_id}` : `/questions/${v.post_id}`,
@@ -345,7 +369,7 @@ export default function UserProfile() {
               onClick={() => setShowEditModal(true)}
               className="absolute top-4 right-4 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-md backdrop-blur-sm"
             >
-              Edit Profile
+              Modifier le profil
             </button>
           )}
         </div>
@@ -355,8 +379,8 @@ export default function UserProfile() {
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowImagePreview(true)}
-              aria-label="Open profile photo preview"
+                onClick={() => setShowImagePreview(true)}
+                aria-label="Ouvrir la prévisualisation de la photo"
               className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark p-0"
               style={{ background: 'transparent' }}
             >
@@ -384,7 +408,7 @@ export default function UserProfile() {
                 {/* small circular change button at bottom-right of avatar, 44x44 touch target */}
                 <button
                   onClick={() => document.getElementById('avatar-upload')?.click()}
-                  aria-label="Change profile photo"
+                    aria-label="Changer la photo de profil"
                   className="absolute -right-1 -bottom-1 w-11 h-11 min-w-[44px] min-h-[44px] bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark"
                   disabled={isUploading}
                 >
@@ -417,9 +441,9 @@ export default function UserProfile() {
               <div className="flex items-center mt-4 space-x-6">
                 <div>
                   <div className="text-2xl font-bold text-[var(--primary)]">
-                    {userData.reputation}
-                  </div>
-                  <div className="text-[var(--text-secondary)] text-sm">reputation</div>
+                      {userData.reputation}
+                    </div>
+                    <div className="text-[var(--text-secondary)] text-sm">réputation</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-[var(--text-primary)]">
@@ -431,7 +455,7 @@ export default function UserProfile() {
                   <div className="text-2xl font-bold text-[var(--text-primary)]">
                     {userData.answers.length}
                   </div>
-                  <div className="text-[var(--text-secondary)] text-sm">answers</div>
+                  <div className="text-[var(--text-secondary)] text-sm">réponses</div>
                 </div>
               </div>
             </div>
@@ -516,7 +540,16 @@ export default function UserProfile() {
           {activeTab === 'activity' && (
             <div className="space-y-4">
               {activityLoading && (
-                <div className="text-text-secondary-light dark:text-text-secondary-dark text-center py-8">Loading activity...</div>
+                            <div className="text-text-secondary-light dark:text-text-secondary-dark text-center py-8">
+                              <div className="max-w-3xl mx-auto space-y-4">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                  <div key={i} className="card p-4">
+                                    <div className="skeleton skeleton-line" />
+                                    <div className="skeleton skeleton-line short mt-2" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
               )}
 
               {activityError && (

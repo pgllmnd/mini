@@ -32,10 +32,20 @@ function Tags() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-rounded animate-spin">progress_activity</span>
-          <span style={{ color: 'var(--text-secondary)' }}>Loading tags...</span>
+      <div className="max-w-5xl mx-auto p-4 space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="skeleton skeleton-line" style={{ width: 220, height: 28 }} />
+          <div className="skeleton skeleton-line short" style={{ width: 120 }} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="card p-4">
+              <div className="skeleton skeleton-chip" />
+              <div className="mt-3 skeleton skeleton-line" />
+              <div className="mt-2 skeleton skeleton-line short" />
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -63,7 +73,7 @@ function Tags() {
           <h1 className="text-2xl font-medium" style={{ color: 'var(--text-primary)' }}>Tags</h1>
         </div>
         <p style={{ color: 'var(--text-secondary)' }} className="text-sm">
-          A tag is a keyword or label that categorizes your question with other, similar questions.
+          Un tag est un mot-clé ou une étiquette qui catégorise votre question avec d'autres questions similaires.
         </p>
       </div>
 

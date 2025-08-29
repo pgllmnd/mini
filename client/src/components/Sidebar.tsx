@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import ChatPopup from './ChatPopup';
+import { useLanguage } from '../hooks/LanguageContext';
 
 function Sidebar() {
   const location = useLocation();
@@ -10,12 +11,16 @@ function Sidebar() {
     return location.pathname === path;
   };
 
+  const { lang, setLang } = useLanguage();
+
+  const { t } = useLanguage();
+
   const navItems = [
-    { path: '/', label: 'Home', icon: 'home' },
-    { path: '/questions', label: 'Questions', icon: 'help_center' },
-    { path: '/tags', label: 'Tags', icon: 'sell' },
-    { path: '/users', label: 'Users', icon: 'group' },
-    { path: '/companies', label: 'Companies', icon: 'business' },
+    { path: '/', label: t('home'), icon: 'home' },
+    { path: '/questions', label: t('questions'), icon: 'help_center' },
+    { path: '/tags', label: t('tags'), icon: 'sell' },
+    { path: '/users', label: t('users'), icon: 'group' },
+    { path: '/companies', label: t('companies'), icon: 'business' },
   ];
 
   return (
@@ -46,6 +51,24 @@ function Sidebar() {
             <span className="material-symbols-outlined mr-2 text-[20px]">explore</span>
             Explore Collectives
           </Link>
+        </div>
+        
+        {/* Language selector placed in sidebar */}
+        <div className="sidebar-locale-container mt-6 px-4">
+          <label htmlFor="sidebar-locale" className="text-xs text-[var(--text-secondary)] block mb-2">Langue</label>
+          <div className="locale-wrapper">
+            <span className="locale-icon" aria-hidden>🌐</span>
+            <select
+              id="sidebar-locale"
+              value={lang}
+              onChange={(e) => setLang(e.target.value as 'fr' | 'en')}
+              className="locale-select"
+              aria-label="Sélection de la langue"
+            >
+              <option value="fr">🇫🇷 Français</option>
+              <option value="en">EN English</option>
+            </select>
+          </div>
         </div>
       </div>
       {/* Assistant Chat Button */}

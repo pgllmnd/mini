@@ -74,14 +74,25 @@ function Login() {
         </div>
 
         <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
+  type="submit"
+  disabled={loading}
+  className={`w-full text-white p-2 rounded ${
+    loading ? 'opacity-50 cursor-not-allowed' : ''
+  }`}
+  style={{
+    backgroundColor: 'var(--primary)',
+    transition: 'background-color 0.2s ease',
+  }}
+  onMouseEnter={(e) => {
+    if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#9a3e28'; // un peu plus foncé au hover
+  }}
+  onMouseLeave={(e) => {
+    if (!loading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--primary)';
+  }}
+>
+  {loading ? 'Logging in...' : 'Login'}
+</button>
+
       </form>
     </div>
   );

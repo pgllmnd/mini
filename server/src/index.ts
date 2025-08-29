@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import questionRoutes from './routes/questions';
+import answerActionsRoutes from './routes/answer-actions';
 import userRoutes from './routes/users';
 import tagRoutes from './routes/tags';
 import chatRoutes from './routes/chat';
@@ -66,9 +67,30 @@ app.use('/uploads', express.static('uploads', {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/questions', questionRoutes);
+// Expose /api/answers/:answerId/accept and /api/answers/:answerId/vote
+app.use('/api', answerActionsRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/chat', chatRoutes);
+
+// Debug route: list registered routes (only in dev)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/__routes', (_req, res) => {
+    try {
+      // Extract readable routes from app stack
+      // @ts-ignore - internal Express structure
+      const routes = app._router.stack
+        .filter((r: any) => r.route)
+        .map((r: any) => {
+          const methods = Object.keys(r.route.methods).join(',');
+          return `${methods.toUpperCase()} ${r.route.path}`;
+        });
+      res.json({ routes });
+    } catch (e) {
+      res.status(500).json({ error: 'Unable to list routes' });
+    }
+  });
+}
 
 const PORT = process.env.PORT || 5000;
 

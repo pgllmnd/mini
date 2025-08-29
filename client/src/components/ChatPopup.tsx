@@ -63,7 +63,7 @@ export default function ChatPopup({ isOpen, onClose }: ChatPopupProps) {
         {/* Header avec titre */}
         <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 bg-white">
           <div className="flex items-center">
-            <span className="material-symbols-outlined mr-2 text-blue-500">smart_toy</span>
+            <span className="material-symbols-outlined mr-2 text-[var(--link-color)]">smart_toy</span>
             <h3 className="text-sm font-semibold">Assistant IA</h3>
           </div>
           <button

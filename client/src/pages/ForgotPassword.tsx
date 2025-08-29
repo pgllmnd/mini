@@ -18,12 +18,12 @@ function ForgotPassword() {
     try {
       await api.post('/auth/forgot-password', { email });
 
-      setSuccess('Password reset instructions have been sent to your email');
+      setSuccess('Les instructions de réinitialisation ont été envoyées à votre e-mail');
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send reset email. Please try again.');
+      setError(err.response?.data?.message || "Échec de l'envoi de l'e-mail de réinitialisation. Veuillez réessayer.");
     } finally {
       setLoading(false);
     }
@@ -31,7 +31,7 @@ function ForgotPassword() {
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Forgot Password</h1>
+      <h1 className="text-3xl font-bold mb-6">Mot de passe oublié</h1>
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -48,7 +48,7 @@ function ForgotPassword() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-gray-700 mb-2">
-            Email
+            Adresse e-mail
           </label>
           <input
             id="email"
@@ -59,27 +59,25 @@ function ForgotPassword() {
             required
           />
           <p className="text-sm text-gray-500 mt-1">
-            Enter your email address and we'll send you instructions to reset your password.
+            Entrez votre adresse e-mail et nous vous enverrons les instructions pour réinitialiser votre mot de passe.
           </p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          {loading ? 'Sending...' : 'Send Reset Instructions'}
-        </button>
+        <div className="form-footer">
+          <button
+            type="submit"
+            disabled={loading}
+            className={`btn btn-primary w-full ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {loading ? 'Envoi en cours...' : "Envoyer les instructions"}
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => navigate('/login')}
-          className="w-full text-blue-500 hover:text-blue-600 text-center mt-4"
-        >
-          Back to Login
-        </button>
+        <div className="mt-4 text-center">
+          <button type="button" onClick={() => navigate('/login')} className="btn-link">
+            Retour à la connexion
+          </button>
+        </div>
       </form>
     </div>
   );
